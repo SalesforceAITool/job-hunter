@@ -77,7 +77,7 @@ def message_box(text, title="Job Hunter"):
         print(text, file=sys.stderr)
 
 
-def keep_awake(on=True):
+def keep_awake(on=True, quiet=False):
     """Windows: stop the PC from going to sleep while Job Hunter runs (Akshay, 10 Nov: "never sleep" so the
     2-hourly applies keep going). The screen can still turn off. Closing the app gives normal sleep back."""
     if os.name != "nt":
@@ -87,7 +87,8 @@ def keep_awake(on=True):
         ES_CONTINUOUS, ES_SYSTEM_REQUIRED, ES_AWAYMODE_REQUIRED = 0x80000000, 0x00000001, 0x00000040
         flags = ES_CONTINUOUS | (ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED if on else 0)
         ok = bool(ctypes.windll.kernel32.SetThreadExecutionState(flags))
-        log.info("keep awake %s: %s", "on" if on else "off", ok)
+        if not quiet:
+            log.info("keep awake %s: %s", "on" if on else "off", ok)
         return ok
     except Exception as e:
         log.warning("keep awake failed: %s", e)
@@ -195,8 +196,15 @@ def main(argv=None):
     if cfg.get("keep_awake", True):
         keep_awake(True)          # this main thread lives as long as the app, so the flag stays on until it exits
     try:
+        n = 0
         while True:
             time.sleep(1)
+            n += 1
+            # Akshay, 10 Nov: this laptop is Job Hunter's - it must not fall asleep by itself (on charger or battery)
+            # for as long as the app runs. Re-assert every minute, also after a manual sleep/wake. He can still
+            # sleep or shut down by hand; closing the lid follows the Windows lid setting.
+            if n % 60 == 0 and config.load().get("keep_awake", True):
+                keep_awake(True, quiet=True)
     except KeyboardInterrupt:
         log.info("shutting down")
         keep_awake(False)
