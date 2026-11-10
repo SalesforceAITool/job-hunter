@@ -77,6 +77,23 @@ def message_box(text, title="Job Hunter"):
         print(text, file=sys.stderr)
 
 
+def keep_awake(on=True):
+    """Windows: stop the PC from going to sleep while Job Hunter runs (Akshay, 10 Nov: "never sleep" so the
+    2-hourly applies keep going). The screen can still turn off. Closing the app gives normal sleep back."""
+    if os.name != "nt":
+        return False
+    try:
+        import ctypes
+        ES_CONTINUOUS, ES_SYSTEM_REQUIRED, ES_AWAYMODE_REQUIRED = 0x80000000, 0x00000001, 0x00000040
+        flags = ES_CONTINUOUS | (ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED if on else 0)
+        ok = bool(ctypes.windll.kernel32.SetThreadExecutionState(flags))
+        log.info("keep awake %s: %s", "on" if on else "off", ok)
+        return ok
+    except Exception as e:
+        log.warning("keep awake failed: %s", e)
+        return False
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Job Hunter")
     ap.add_argument("--port", type=int, default=None)
@@ -132,11 +149,14 @@ def main(argv=None):
                 log.exception("auto-run failed: %s", e)
         threading.Thread(target=kick, name="jh-autorun", daemon=True).start()
 
+    if cfg.get("keep_awake", True):
+        keep_awake(True)          # this main thread lives as long as the app, so the flag stays on until it exits
     try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
         log.info("shutting down")
+        keep_awake(False)
         runner.stop_run()
         server.shutdown_server(srv)
     return 0
