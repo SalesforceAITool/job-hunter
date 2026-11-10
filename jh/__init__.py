@@ -2,4 +2,4 @@
 
 __version__ = "1.0.0"
 # Bumped on every deploy; the page compares it with its own copy and asks for a restart when they differ.
-BUILD = "2026-11-10.1"
+BUILD = "2026-11-10.2"

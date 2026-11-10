@@ -96,8 +96,63 @@ def role_reason(title):
     return "not a fit: developer roles only (Akshay)"
 
 
+ARCH_TITLE = re.compile(r"\barchitect", re.I)
+# "8+ years of experience", "8-10 yrs experience", "minimum 8 years", "at least 8 years of Salesforce experience",
+# "experience: 8+ years", "experience of 8 years"
+_YEARS = re.compile(
+    r"(?:(?:minimum|min\.?|at\s+least|over|more\s+than)\s+(?:of\s+)?)?"
+    r"(\d{1,2})\s*(?:\+|plus)?\s*(?:(?:-|\u2013|to)\s*(\d{1,2})\s*\+?\s*)?(?:years?|yrs?)\b(?:'s)?"
+    r"(?=[^.\n]{0,60}?\bexperience)"
+    r"|experience\s*(?:of|:|-)?\s*(?:minimum\s+|at\s+least\s+)?(\d{1,2})\s*(?:\+|plus)?\s*(?:(?:-|\u2013|to)\s*\d{1,2}\s*)?(?:years?|yrs?)\b",
+    re.I)
+
+
+def _cfg_value(key, default):
+    try:
+        from . import config
+        return config.load().get(key, default)
+    except Exception:
+        return default
+
+
+def architect_reason(title):
+    """Akshay, 10 Nov: "not for the architect level" - every Architect title is skipped, even "Architect/Developer"."""
+    from .config import _as_bool
+    if _as_bool(_cfg_value("skip_architect", True)) and ARCH_TITLE.search(title or ""):
+        return "not a fit: architect level (Akshay)"
+    return ""
+
+
+def years_required(text):
+    """Minimum years of experience the JD asks for (the highest lower bound it states), or None.
+    "8-10 years" -> 8, "5+ years Salesforce, 8+ years overall" -> 8. "Preferred"/"a plus" mentions don't count."""
+    best = None
+    for m in _YEARS.finditer(text or ""):
+        if _SOFT_AFTER.search(text[m.end():m.end() + 60]):
+            continue
+        n = int(m.group(1) or m.group(3))
+        if 1 <= n <= 30:
+            best = n if best is None else max(best, n)
+    return best
+
+
+def experience_reason(text):
+    """Akshay, 10 Nov: apply only when the job asks for at most 6-7 years (config max_years_required, default 7)."""
+    try:
+        cap = min(30, max(1, int(_cfg_value("max_years_required", 7) or 7)))
+    except (TypeError, ValueError, OverflowError):
+        cap = 7
+    n = years_required(text)
+    if n is not None and n > cap:
+        return "not a fit: needs %d+ years (Akshay applies up to %d)" % (n, cap)
+    return ""
+
+
 def title_reason(title):
     t = title or ""
+    a = architect_reason(t)
+    if a:
+        return a
     if TITLE_BAD.search(t):
         return "not a fit: sales role" if re.search(r"\bsales\b|account|sdr|bdr|business development", t, re.I) \
             else "not a fit: not a salesforce technical role"
@@ -119,6 +174,9 @@ def screen(title, text="", location="", india_role=None):
     if re.search(r"\((?:hybrid|on-?site)\)", loc, re.I):
         return False, "onsite/hybrid"
     if body:
+        r = experience_reason(body)
+        if r:
+            return False, r
         if _hard(ONSITE, body) and not re.search(r"(?:fully|100%)\s+remote|remote[\s-]first", body, re.I):
             return False, "onsite/hybrid"
         if not india_role:

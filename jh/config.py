@@ -56,10 +56,18 @@ DEFAULTS = {
     # LinkedIn Fast Apply (Akshay, 30 Oct: "whenever a new job is posted on LinkedIn, find it and apply immediately"):
     # while the app is open, every every_min minutes his own Chrome opens LinkedIn's "Easy Apply + Remote + past hour"
     # search and applies to the new jobs (fills + submits), capped per run and per day, only between the hours below.
-    "li_fast": {"on": True, "every_min": 30, "per_run": 5, "daily_cap": 30, "start_hour": 8, "end_hour": 24},
+    "li_fast": {"on": True, "every_min": 30, "per_run": 5, "daily_cap": 30, "start_hour": 8, "end_hour": 24,
+                # Akshay, 10 Nov: one LinkedIn cycle (Easy Apply jobs + hiring posts) every 2 hours, and the next AI
+                # cycle only gap_after_min minutes after the previous one FINISHED, to save tokens (0 = no gap)
+                "lanes": ["easy_apply"], "gap_after_min": 0},
     # extra ways to a VERIFIED work email when SalesQL finds none (jh/emailfind.py); keys optional, free tiers work
     "email_finder": {"hunter_api_key": "", "apollo_api_key": "", "daily_cap": 25},
     "roles": "developer",     # Akshay, 30 Oct: apply only to Salesforce Developer/Engineer roles ("all" = any SF role)
+    # Akshay, 10 Nov: never architect-level roles, and only jobs asking for at most 6-7 years of experience
+    "skip_architect": True,
+    "max_years_required": 7,
+    # Akshay, 10 Nov: runs quietly in the background - no dashboard tab pops up when Windows starts
+    "open_browser_at_boot": False,
     "default_regions": ["india", "world"],   # LinkedIn regions when a run doesn't pick any (US: 0 replies so far)
     # Job board: remote Salesforce jobs worldwide from the last 48 h, fetched by plain Python (no AI)
     # fast_minutes: company portals + remote boards (cheap JSON); li_every_hours: LinkedIn's public list per region
@@ -76,6 +84,7 @@ DEFAULTS = {
         # the extension's deviceId of Akshay's own Chrome on THIS laptop: the ONLY browser ever used once set
         # (names like "Browser 2" are renumbered every time browsers connect, so they can't be trusted)
         "chrome_device_id": "",
+        "chrome_profile_dir": "",   # Job Hunter Chrome profile folder (chrome://version "Profile Path", e.g. "Profile 2"): opened at boot
     },
     "profile": {
         "name": "Akshay Kumar Verma",
@@ -308,7 +317,19 @@ def apply_update(cfg: dict, incoming: dict, from_api: bool = False) -> dict:
             lf[k] = min(hi, max(lo, int(lf.get(k))))
         except (TypeError, ValueError, OverflowError):
             lf[k] = DEFAULTS["li_fast"][k]
+    lanes = lf.get("lanes") if isinstance(lf.get("lanes"), list) else DEFAULTS["li_fast"]["lanes"]
+    lf["lanes"] = [x for x in ("easy_apply", "posts", "linkedin_jobs") if x in [str(v) for v in lanes]] or ["easy_apply"]
+    try:
+        lf["gap_after_min"] = min(600, max(0, int(lf.get("gap_after_min"))))
+    except (TypeError, ValueError, OverflowError):
+        lf["gap_after_min"] = 0
     out["li_fast"] = {k: lf[k] for k in DEFAULTS["li_fast"]}
+    out["skip_architect"] = _as_bool(out.get("skip_architect", True))
+    try:
+        out["max_years_required"] = min(30, max(1, int(out.get("max_years_required"))))
+    except (TypeError, ValueError, OverflowError):
+        out["max_years_required"] = DEFAULTS["max_years_required"]
+    out["open_browser_at_boot"] = _as_bool(out.get("open_browser_at_boot", False))
     ef = _deep_merge(DEFAULTS["email_finder"], out.get("email_finder") if isinstance(out.get("email_finder"), dict) else {})
     try:
         ef["daily_cap"] = min(500, max(0, int(ef.get("daily_cap"))))

@@ -222,7 +222,10 @@ class Watcher:
                       # tests inject a fetcher and never want the background Job board refresh / autopilot
                       "no_jobboard": not (jobboard if jobboard is not None else not injected),
                       "next_followups": time.time() + 60, "next_li": time.time() + 300,
-                      "next_li_fast": time.time() + 120}
+                      "next_li_fast": time.time() + 120,
+                      # Akshay, 10 Nov (token saving): after an AI cycle FINISHES, wait li_fast.gap_after_min before
+                      # the next AI run (Fast Apply / Job board); replies + approvals are free and not held back
+                      "next_ai": 0.0, "ai_active": False}
 
     # ---- config
     def cfg(self) -> dict:
@@ -335,8 +338,14 @@ class Watcher:
                 log.exception("watch tick failed: %s", e)
 
     # ---- the brain
+    def ai_gap_s(self):
+        return 60 * int((config.load().get("li_fast") or {}).get("gap_after_min") or 0)
+
     def tick(self, now=None):
         now = time.time() if now is None else now
+        if self.state.get("ai_active") and not runner.is_running():
+            self.state["ai_active"] = False                     # the AI cycle just finished: start the quiet gap
+            self.state["next_ai"] = now + self.ai_gap_s()
         w = self.cfg()
         conn = db.connect(self.db_path)
         try:
@@ -487,6 +496,8 @@ class Watcher:
         from . import jobboard
         if self.state.get("no_jobboard") or runner.is_running() or not jobboard.pending(conn):
             return None
+        if time.time() < self.state.get("next_ai", 0):         # token-saving gap after the last AI cycle
+            return None
         # the same queue as the last board_apply start, again: that run could not work it (a hole in the status
         # machine) -> wait instead of restarting a run every TICK_S
         ids, now = jobboard.queued_ids(conn), time.time()
@@ -502,7 +513,7 @@ class Watcher:
         """LinkedIn Fast Apply: every li_fast.every_min minutes (during his hours, under the daily cap and the AI budget)
         start an Easy Apply run on LinkedIn jobs from the past hour, in his own Chrome. Returns the start dict or None."""
         lf = config.load().get("li_fast") or {}
-        if not lf.get("on") or now < self.state.get("next_li_fast", 0):
+        if not lf.get("on") or now < self.state.get("next_li_fast", 0) or now < self.state.get("next_ai", 0):
             return None
         hour = time.localtime(now).tm_hour if local_hour is None else local_hour
         if not (int(lf.get("start_hour", 8)) <= hour < int(lf.get("end_hour", 24))):
@@ -514,7 +525,16 @@ class Watcher:
         if over_budget(conn):
             return None
         regions = (config.load().get("autopilot") or {}).get("regions") or ["india", "world"]
-        return self._start(conn, "li_fast", lanes=["easy_apply"], regions=regions)
+        lanes = [x for x in ("easy_apply", "posts", "linkedin_jobs")
+                 if x in [str(v) for v in (lf.get("lanes") if isinstance(lf.get("lanes"), list) else [])]] or ["easy_apply"]
+        if not self.state.get("no_jobboard"):
+            try:
+                from . import jobboard
+                if jobboard.pending(conn):
+                    lanes.append("board_apply")                 # Job board picks ride along in the same cycle
+            except Exception as e:
+                log.warning("li_fast: job board check failed: %s", e)
+        return self._start(conn, "li_fast", lanes=lanes, regions=regions, quick="posts" in lanes)
 
     def _start(self, conn, kind, lanes, targets=None, quick=False, regions=None):
         w = self.cfg()
@@ -531,11 +551,14 @@ class Watcher:
             elif kind == "board_apply":
                 rid = self.start_run("jobboard", db_path=self.db_path, lanes=lanes)
             elif kind == "li_fast":
-                rid = self.start_run("li_fast", db_path=self.db_path, lanes=lanes, regions=regions, fast=True)
+                rid = self.start_run("li_fast", db_path=self.db_path, lanes=lanes, regions=regions, fast=True,
+                                     **({"quick": True} if quick else {}))
             elif kind in ("followups", "linkedin_jobs"):
                 rid = self.start_run("auto", db_path=self.db_path, lanes=lanes, regions=regions)
             else:
                 rid = self.start_run("approved", db_path=self.db_path, lanes=lanes)
+            if kind in ("li_fast", "board_apply", "posts", "linkedin_jobs", "easy_apply"):
+                self.state["ai_active"] = True                  # gap starts when this run finishes (tick)
             return {"kind": kind, "run_id": rid}
         except runner.AlreadyRunning:
             return None

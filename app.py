@@ -94,6 +94,44 @@ def keep_awake(on=True):
         return False
 
 
+BOOT_WINDOW_S = 15 * 60
+
+
+def just_booted():
+    """True in the first minutes after Windows started: the Startup shortcut launched us, nobody clicked."""
+    if os.name != "nt":
+        return False
+    try:
+        import ctypes
+        ctypes.windll.kernel32.GetTickCount64.restype = ctypes.c_ulonglong
+        return ctypes.windll.kernel32.GetTickCount64() / 1000.0 < BOOT_WINDOW_S
+    except Exception:
+        return False
+
+
+def open_job_hunter_chrome(cfg):
+    """At boot, open the Job Hunter Chrome profile (engine.chrome_profile_dir) so the 2-hourly cycle has its
+    browser. Only that profile; nothing when it is not set."""
+    prof = str(((cfg.get("engine") or {}).get("chrome_profile_dir")) or "").strip()
+    if not prof or os.name != "nt":
+        return False
+    import subprocess
+    for base in (os.environ.get("ProgramFiles", ""), os.environ.get("ProgramFiles(x86)", ""),
+                 os.environ.get("LOCALAPPDATA", "")):
+        exe = os.path.join(base, "Google", "Chrome", "Application", "chrome.exe")
+        if base and os.path.isfile(exe):
+            try:
+                subprocess.Popen([exe, "--profile-directory=" + prof, "https://www.linkedin.com/feed/"],
+                                 close_fds=True)
+                log.info("opened the Job Hunter Chrome (%s)", prof)
+                return True
+            except OSError as e:
+                log.warning("could not open the Job Hunter Chrome: %s", e)
+                return False
+    log.warning("Chrome not found: Job Hunter Chrome not opened")
+    return False
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Job Hunter")
     ap.add_argument("--port", type=int, default=None)
@@ -106,7 +144,10 @@ def main(argv=None):
     port = args.port or int(cfg.get("port", 8765))
     base = "http://127.0.0.1:%d" % port
     auto_run = bool(cfg.get("auto_run_on_open", False)) and not args.no_run
-    log.info("starting Job Hunter (port %s, data %s)", port, config.data_dir())
+    booted = just_booted()
+    if booted and not cfg.get("open_browser_at_boot", False):
+        args.no_browser = True       # Akshay, 10 Nov: start quietly in the background when Windows starts
+    log.info("starting Job Hunter (port %s, data %s)%s", port, config.data_dir(), " at Windows start" if booted else "")
 
     running = existing_server(base)
     if running is not None:
@@ -135,6 +176,8 @@ def main(argv=None):
         return 1
     server.serve_in_thread(srv)
     log.info("server listening on %s", base)
+    if booted:
+        open_job_hunter_chrome(cfg)
     if not args.no_browser:
         webbrowser.open(base + "/")
 

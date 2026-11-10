@@ -461,8 +461,9 @@ def _run_main(run_id, trigger, cfg, db_path, stop):
     # LinkedIn; the LinkedIn lanes run only from his Run button
     li_block = bool(cfg.get("linkedin_safe", True)) and trigger not in ("button",)
     li_fast_ok = trigger == "li_fast" and bool((cfg.get("li_fast") or {}).get("on"))   # his standing instruction
+    li_fast_lanes = set((cfg.get("li_fast") or {}).get("lanes") or ["easy_apply"])    # Akshay, 10 Nov: + posts
     chosen = (lambda ln: chosen0(ln) and not (li_block and ln in LINKEDIN_LANES
-                                               and not (li_fast_ok and ln == "easy_apply")))
+                                               and not (li_fast_ok and ln in li_fast_lanes)))
     NOT_SEL = "not selected for this run"
     t0 = time.time()
     final = "done"

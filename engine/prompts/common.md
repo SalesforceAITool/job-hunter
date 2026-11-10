@@ -43,6 +43,8 @@ Drop (decision `skipped`, short `skip_reason`):
 - onsite or hybrid anywhere, India included → `"onsite/hybrid"`;
 - remote but locked to one country/region other than India or the US (e.g. "LATAM only", "must live in Canada", "Remote - Poland") → `"remote only for <country>"`. US-located remote roles are the main target: they are fine unless the JD itself requires US work authorization, citizenship, residency or W2 (covered by the rules above);
 - a language he doesn't speak (he speaks English and Hindi) → `"requires <language>"`;
+- **Architect-level role** (any title with "Architect", e.g. Technical/Solution Architect) → `"not a fit: architect level"` (Akshay, 10 Nov);
+- the JD's **minimum experience is more than 7 years** (e.g. "8+ years", "10-12 years", "at least 9 years"; the highest minimum it states counts, "preferred"/"a plus" doesn't) → `"not a fit: needs <N>+ years"` (Akshay, 10 Nov: apply only up to 6-7 years);
 - already contacted → `"already contacted"`;
 - qualifies but you found no email for a suitable person → `"no email found"` (use exactly this text — the portal lane picks these up).
 Priority when time is short: US remote first, then worldwide remote (USD/GBP/EUR pay), then India remote. All of them get applied to.
