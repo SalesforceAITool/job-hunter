@@ -1341,7 +1341,7 @@
     if (v === 'agencies') { if (S.agencies) renderAgencies(); loadAgencies(!!S.agencies); }
     if (v === 'board') { renderBoard(); loadBoard(!!S.board); }
   }
-  const APP_BUILD = '2026-11-10.3';   // must match jh/__init__.py BUILD
+  const APP_BUILD = '2026-11-10.4';   // must match jh/__init__.py BUILD
   async function checkBuild() {
     let b = null;
     try { const r = await fetch('/api/version', { cache: 'no-store' }); if (r.ok) b = (await r.json()).build; } catch (e) { return; }
@@ -2716,9 +2716,9 @@
     ['linkedin_jobs', 'LinkedIn Jobs'], ['himalayas', 'Remote boards'], ['easy_apply', 'Easy Apply'], ['portal', 'Portal forms']];
   // off by default (architect review 2026-10-22, real data): JobRight 0 human replies, Remote-boards emails reach jobs
   // 3-4 days old, Portal forms mostly abandoned. One click turns each back on.
-  const RUN_OPT_IN = new Set(['jobright', 'himalayas', 'portal']);
+  const RUN_OPT_IN = new Set(['jobright', 'himalayas', 'portal', 'followups', 'linkedin_jobs']);   // Akshay, 10 Nov: only LinkedIn posts + Easy Apply ticked by default
   const RUN_REGIONS = [['us', 'US'], ['india', 'India'], ['world', 'Worldwide']];
-  const RUNSEL_KEY = 'jh-runsel-2';   // v2: new defaults (Easy Apply first, India + Worldwide)
+  const RUNSEL_KEY = 'jh-runsel-3';   // v2: new defaults (Easy Apply first, India + Worldwide)
   const RS = { lanes: new Set(RUN_LANES.map(x => x[0]).filter(id => !RUN_OPT_IN.has(id))), regions: new Set(['india', 'world']), locked: null };
 
   function loadRunSel() {

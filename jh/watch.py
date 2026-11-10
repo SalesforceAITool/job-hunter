@@ -354,6 +354,12 @@ class Watcher:
                 actions.auto_approve_ready(conn)
             if not runner.is_running() and actions.pending_approvals(conn):
                 return self._start(conn, "submit", lanes=["submit"])
+            focus = bool(config.load().get("focus_linkedin"))
+            if focus:
+                # only LinkedIn posts + Easy Apply by themselves; the rest waits for his own Run click
+                if not runner.is_running():
+                    return self.li_fast_tick(conn, now)
+                return None
             # 2. Job board: refresh in the background when due (plain HTTP); auto-fill picks after each refresh
             self.jobboard_tick(conn)
             ap = self.autopilot()
@@ -527,7 +533,7 @@ class Watcher:
         regions = (config.load().get("autopilot") or {}).get("regions") or ["india", "world"]
         lanes = [x for x in ("easy_apply", "posts", "linkedin_jobs")
                  if x in [str(v) for v in (lf.get("lanes") if isinstance(lf.get("lanes"), list) else [])]] or ["easy_apply"]
-        if not self.state.get("no_jobboard"):
+        if not self.state.get("no_jobboard") and not config.load().get("focus_linkedin"):
             try:
                 from . import jobboard
                 if jobboard.pending(conn):

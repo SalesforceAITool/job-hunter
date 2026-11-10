@@ -78,6 +78,24 @@ class CycleTests(TempData, unittest.TestCase):
         self.assertIn("f_TPR=r7200", t)
         self.assertIn("more than 7 years", t)
 
+    def test_focus_mode_runs_only_the_linkedin_cycle(self):
+        cfg = config.load(); cfg["li_fast"] = dict(cfg["li_fast"], every_min=10, gap_after_min=0)
+        cfg["focus_linkedin"] = True; config.save(cfg)
+        calls = []
+        w = watch.Watcher(None, start_run=lambda trig, **k: calls.append((trig, k)) or 1)
+        orig = runner.is_running; runner.is_running = lambda: False
+        try:
+            now = time.time() + 200
+            w.state["next_followups"] = 0                      # follow-ups are due, but focus mode leaves them alone
+            w.tick(now)
+            self.assertEqual([(t, k["lanes"]) for t, k in calls], [("li_fast", ["easy_apply", "posts"])])
+            w.tick(now + 300)
+            self.assertEqual(len(calls), 1)                    # not before 10 minutes
+            w.tick(now + 601)
+            self.assertEqual(len(calls), 2)
+        finally:
+            runner.is_running = orig
+
     def test_bad_lanes_are_cleaned(self):
         cfg = config.apply_update(config.load(), {"li_fast": {"lanes": ["posts", "rm -rf", "board_apply"]}})
         self.assertEqual(cfg["li_fast"]["lanes"], ["posts"])

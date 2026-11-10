@@ -64,6 +64,9 @@ DEFAULTS = {
     "email_finder": {"hunter_api_key": "", "apollo_api_key": "", "daily_cap": 25},
     "roles": "developer",     # Akshay, 30 Oct: apply only to Salesforce Developer/Engineer roles ("all" = any SF role)
     # Akshay, 10 Nov: never architect-level roles, and only jobs asking for at most 6-7 years of experience
+    # Akshay, 10 Nov (evening): by default the app works ONLY on LinkedIn hiring posts + Easy Apply, every 10 minutes;
+    # everything else (follow-ups, job board, portals, remote boards) runs only when he ticks it and clicks Run
+    "focus_linkedin": False,   # set true in data/config.json on the Job Hunter laptop
     "skip_architect": True,
     "max_years_required": 7,
     # Akshay, 10 Nov: runs quietly in the background - no dashboard tab pops up when Windows starts
@@ -311,7 +314,7 @@ def apply_update(cfg: dict, incoming: dict, from_api: bool = False) -> dict:
     out["linkedin_safe"] = _as_bool(out.get("linkedin_safe", True))
     lf = _deep_merge(DEFAULTS["li_fast"], out.get("li_fast") if isinstance(out.get("li_fast"), dict) else {})
     lf["on"] = _as_bool(lf.get("on"))
-    for k, lo, hi in (("every_min", 15, 240), ("per_run", 1, 10), ("daily_cap", 0, 60), ("start_hour", 0, 23),
+    for k, lo, hi in (("every_min", 10, 240), ("per_run", 1, 10), ("daily_cap", 0, 60), ("start_hour", 0, 23),
                       ("end_hour", 1, 24)):
         try:
             lf[k] = min(hi, max(lo, int(lf.get(k))))
@@ -325,6 +328,7 @@ def apply_update(cfg: dict, incoming: dict, from_api: bool = False) -> dict:
         lf["gap_after_min"] = 0
     out["li_fast"] = {k: lf[k] for k in DEFAULTS["li_fast"]}
     out["skip_architect"] = _as_bool(out.get("skip_architect", True))
+    out["focus_linkedin"] = _as_bool(out.get("focus_linkedin", False))
     try:
         out["max_years_required"] = min(30, max(1, int(out.get("max_years_required"))))
     except (TypeError, ValueError, OverflowError):
