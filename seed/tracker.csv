@@ -1,0 +1,118 @@
+date,company,role,contact,title,email,status,next_step
+2026-10-06,CrossCountry Consulting,Senior Salesforce Developer,Katie Martino,Talent Acquisition Director,kmartino@crosscountry-consulting.com,sent,nudge 2 sent 2026-10-13; sequence done (no reply)
+2026-10-07,CrossCountry Consulting,Senior Salesforce Developer,Emile Karam,"Managing Director, Salesforce Practice",ekaram@crosscountry-consulting.com,sent (tailored resume),nudge 2 sent 2026-10-13; sequence done (no reply)
+2026-10-06,GBG Plc,Salesforce Developer (4057),GBG Talent Attraction,Hiring inbox,behired@gbgplc.com,sent,nudge 2 sent 2026-10-13; sequence done (no reply)
+2026-10-06,Pashtek,Salesforce Developer (part-time),Arvind Kumar,Senior IT Recruiter,arvind@pashtek.com,sent,nudge 2 sent 2026-10-13; sequence done (no reply)
+2026-10-07,Pashtek,Salesforce Developer (part-time),Sundhar Kasinathan,CEO,sundhar@pashtek.com,sent (CEO note + resume),nudge 2 sent 2026-10-13; sequence done (no reply)
+2026-10-06,Cherokee Federal,Salesforce Developer,-,-,-,skipped,US citizenship + Public Trust required
+2026-10-06,DMI,Salesforce Developer,-,-,-,skipped,US work eligibility + security clearance required
+2026-10-06,TechnoSphere,Senior Salesforce Developer,-,-,-,skipped,onsite Tysons VA + FSC mandatory
+2026-10-07,Techouts,Salesforce Developer,Poojitha K,Talent Acquisition Specialist,poojitha.k@techouts.com,sent (tailored resume),nudge 2 sent 2026-10-13; sequence done (no reply)
+2026-10-07,MillerKnoll,Senior Software Engineer - Salesforce,Quinn Dorsey,Talent Acquisition Partner,quinn_dorsey@millerknoll.com,sent (tailored resume),nudge 2 sent 2026-10-13; sequence done (no reply)
+2026-10-07,Celestica,Senior Salesforce Developer / Admin,Joyeeta Mitra,Talent Acquisition Manager,jo.mitra@celestica.com,sent (tailored resume),nudge 2 sent 2026-10-13; sequence done (no reply)
+2026-10-07,Celestica,Senior Salesforce Developer / Admin,Ryan Salmon,Talent Acquisition Leader,ryan.salmon@celestica.com,sent (tailored resume),nudge 2 sent 2026-10-13; sequence done (no reply)
+2026-10-07,Vibrant Emotional Health,"Senior Engineer, Salesforce",Melissa Cox,Talent Acquisition Manager,mcox@vibrant.org,sent (tailored resume),nudge 2 sent 2026-10-13; sequence done (no reply)
+2026-10-07,RxCloud,Salesforce Developer (1099),Arjun Vegesna,Partner & CEO,arjun.vegesna@therxcloud.com,sent (tailored resume),nudge 2 sent 2026-10-13; sequence done (no reply)
+2026-10-07,Touchpoints,Senior Salesforce Developer,Naren Kini,CEO,naren.kini@touchpointsinc.com,sent (tailored resume),nudge 2 sent 2026-10-13; sequence done (no reply)
+2026-10-07,Peak & Peak,Salesforce Developer (m/f/d),-,-,-,skipped,"Germany role, German language required; portal application rejected by email 2026-10-08"
+2026-10-07,Docker,Senior Salesforce Developer,-,-,-,skipped,"no visa sponsorship, US/Canada employee"
+2026-10-07,CMG Financial,Senior Salesforce Developer,-,-,-,skipped,must be authorized to work in US
+2026-10-07,Accenture Federal Services,Salesforce Developer,-,-,-,skipped,US citizenship required
+2026-10-07,Lovesac,"Sr. Engineer, Salesforce",-,-,-,skipped,"must reside in US, no sponsorship"
+2026-10-07,Noblesoft Technologies,CPQ Salesforce Developer,-,-,-,skipped,W2 contract only
+2026-10-07,Fuze Health,Software Engineer - Salesforce,-,-,-,skipped,US work authorization required (sister role)
+2026-10-07,PingWind,Senior Salesforce Developer,-,-,-,skipped,posting closed; VA federal work
+2026-10-07,Telix Pharmaceuticals,Salesforce Engineer,-,-,-,skipped,posting closed
+2026-10-07,GranularTek LLC,Senior Salesforce Developer,-,-,-,skipped,no verified email found
+2026-10-07,Tekion (LinkedIn),Salesforce Technical Lead Engineer,Niharika Sahu,Talent Acquisition,niharikas@tekion.com,sent (tailored resume),nudge 2 sent 2026-10-13; sequence done (no reply)
+2026-10-07,CGI (LinkedIn),Senior Salesforce Developer (OmniStudio),Tatya Dave,Talent Acquisition Specialist,tatya.dave@cgi.com,sent (tailored resume),nudge 2 sent 2026-10-13; sequence done (no reply)
+2026-10-07,Holman (LinkedIn),Salesforce Architect,Josie Burns,Talent Acquisition Specialist,josie.burns@holman.com,sent (tailored resume),nudge 2 sent 2026-10-13; sequence done (no reply)
+2026-10-07,Monks,Salesforce Architect,-,-,-,skipped,only Co-CEO found at 8k-person company; no recruiter email
+2026-10-07,Pyramid Technology Solutions,Salesforce Consultant/Architect,-,-,-,skipped,"recruiter found, no email in Apollo"
+2026-10-07,Flexiple,Salesforce Consultant (India remote),-,-,-,skipped,no email in Apollo
+2026-10-07,Infritz,Salesforce Architect Agentforce (India remote),-,-,-,skipped,no email in Apollo
+2026-10-07,Virtual Labs,Salesforce CPQ Developer (India remote),-,-,-,skipped,company not found in Apollo
+2026-10-07,Bright Vision Technologies,Salesforce Developer,-,-,-,skipped,"W2 only / US work status (earlier req); re-seen 2026-10-08 incl. Lead Salesforce Architect, still skipped"
+2026-10-07,NAVA Software Solutions,Salesforce Architect,-,-,-,skipped,W2 contract
+2026-10-07,Thunder,Federal Senior Salesforce Developer,-,-,-,skipped,"federal work, clearance likely"
+2026-10-07,Flourish & Thrive Labs / C&W Consulting,Junior Salesforce Developer,-,-,-,skipped,junior role
+2026-10-07,Jobgether / Referment,Senior Salesforce Developer,-,-,-,skipped,"aggregator/agency, no direct employer"
+2026-10-07,NeerInfo / Vbize,Salesforce Architect,-,-,-,skipped,JD not found; retry later
+2026-10-07,"LATAM/EU-only roles (OpsArmy, VASS, Sombra, Ciklum, team.it, KCS iT, Omega CRM, Conclusion)",Salesforce Developer,-,-,-,skipped,country-restricted remote
+2026-10-07,AANLEY Services (LinkedIn),Salesforce CPQ Architect (India remote),HR inbox,HR,hr@aanley.com,sent (tailored resume),nudge 2 sent 2026-10-13; sequence done (no reply)
+2026-10-07,Talentgigs (LinkedIn),Salesforce Developer (India remote),HR inbox,HR,hr@talentgigs.in,bounced,address not found; Apollo had no verified email for 2 TA staff; use LinkedIn Easy Apply
+2026-10-07,DATALUNIX,Senior Salesforce Developer (Lead),-,-,-,Easy Apply on LinkedIn,only generic inbox / no email found
+2026-10-07,TECEZE,Salesforce Technical Lead (India remote),-,-,-,Easy Apply on LinkedIn,only generic inbox / no email found
+2026-10-07,iSight Technology,Salesforce Technical Lead (India remote),-,-,-,Easy Apply on LinkedIn,only generic inbox / no email found
+2026-10-07,TechMantra Now,Salesforce Architect (India remote),-,-,-,Easy Apply on LinkedIn,only generic inbox / no email found
+2026-10-07,Understanding Recruitment,Part Time Salesforce Developer (UK remote),-,-,-,Easy Apply on LinkedIn,only generic inbox / no email found
+2026-10-07,Rezolve (JobRight),Salesforce Developer (US remote),-,-,-,skipped,"JD not found online, company unclear (not rezolve.ai); retry later"
+2026-10-07,"Country-locked remote (TaskVerse DE, StaffingExpert PH, RBox PH, Apex Systems MX)",Salesforce Developer,-,-,-,skipped,country-restricted remote
+2026-10-07,"LinkedIn posts (ServiceMax, Zuora, Oracle CPQ, Sydney hybrid, EY India)",various,-,-,-,skipped,non-Salesforce / hybrid / no client or email in post
+2026-10-07,Inspira Financial (JobRight),Salesforce Software Engineer II (Remote),Melisa Godinez,Director Talent Acquisition (HR),melisa.godinez@inspirafinancial.com,sent (tailored resume),nudge 2 sent 2026-10-13; sequence done (no reply)
+2026-10-07,Inspira Financial (JobRight),Salesforce Software Engineer II (Remote),Patrick Soule,Director of Software Engineering (leadership),patrick.soule@inspirafinancial.com,replied 2026-10-08,Patrick replied: Talent Team handles next steps if applied online. Akshay: apply on Inspira careers site if not done; no more nudges
+2026-10-07,Touchpoints (JobRight),Senior Salesforce Developer,Sheila K.,Senior Talent Manager (JobRight Hiring Manager),sheila@touchpointsinc.com,sent (tailored resume),nudge 2 sent 2026-10-13; sequence done (no reply)
+2026-10-07,Touchpoints (JobRight),Senior Salesforce Developer,Subham Mohapatra,Salesforce Architect,subham.mohapatra@touchpointsinc.com,sent (tailored resume; referral ask),nudge 2 sent 2026-10-13; sequence done (no reply)
+2026-10-07,Techouts (JobRight),Salesforce Developer,Karunakar Goud,Senior VP - Technology (leader),-,no email found,Vibe had no email and Apollo match is blocked on free plan; retry with JobRight Hiring Manager / Beyond your network names
+2026-10-08,NeuraFlash (JobRight),Sr. Salesforce Developer,Nicola Bryan,"Director, Talent Acquisition",nicola.bryan@neuraflash.com,replied 2026-10-12,Nicola replied: colleague Jag (handles hiring in India) will be in touch; no more nudges. Akshay: watch for Jag's email
+2026-10-08,NeuraFlash (JobRight),Sr. Salesforce Developer,Luis Rivera,Practice Director / Senior Solutions Architect,luis.rivera@neuraflash.com,sent (tailored resume; referral ask),hold: Nicola (TA) replied 2026-10-12 that Jag will follow up; no more nudges
+2026-10-08,entero AG (JobRight),Salesforce Developer (m/w/d),-,-,-,skipped,"Germany (Hamburg/Cologne/Eschborn), fluent German required"
+2026-10-08,Nava PBC (JobRight),Senior Software Engineer (Salesforce),-,-,-,skipped,"must live in listed US states + US work authorization, no visa sponsorship"
+2026-10-08,Fresh Tech IT (LinkedIn post),Salesforce Engineers (AI) - Budapest/Zurich/London,Annabelle Green,Executive Head Hunter / Director,annabelle@freshtechit.com,sent (tailored resume),nudge 2 sent 2026-10-14; sequence done (no reply)
+2026-10-09,SolarWinds (LinkedIn),"Senior Product Owner, Salesforce CPQ/RCA",-,-,-,skipped,"product owner role, not a developer/technical role"
+2026-10-09,"Country-locked remote (Intellias CO, ADENTIS IT, agap2 IT, MC Engineering IT, Azkait MX, Adecco PT)",Salesforce Developer,-,-,-,skipped,country-restricted remote
+2026-10-10,Aretiforce (LinkedIn),Principal Salesforce Engineer,Vince Robbins,Co-founder (Salesforce recruiter),vince.robbins@areti.io,sent (tailored resume),nudge 1 sent 2026-10-12; nudge 2 sent 2026-10-15; sequence done (no reply)
+2026-10-10,Forcecraver Technologies (LinkedIn post),Salesforce Architect / Solution Architect (India remote),Jitender Bhatia,CEO & Founder | Salesforce Architect,jbhatia@forcecraver.com,sent (tailored resume) - email catch-all,nudge 1 sent 2026-10-12; nudge 2 sent 2026-10-15; sequence done (no reply); Gmail delivery-delay notice for nudge 2 on 2026-10-16 (temporary; no permanent bounce as of 2026-10-18)
+2026-10-10,ApTask (LinkedIn),Salesforce CPQ Architect & Revenue Cloud Migration (Pune remote),Stefan Gonsalves,Senior HR Manager (ex-TA),stefan@aptask.com,sent (tailored resume),nudge 1 sent 2026-10-12; nudge 2 sent 2026-10-15; sequence done (only out-of-office auto-reply 2026-10-15)
+2026-10-10,GBIT Global Bridge InfoTech (LinkedIn),"Senior Salesforce Developer, CPQ",Nikhil Madhav,Director of Technology Services,nikhil.madhav@gbitinc.com,sent (tailored resume),nudge 1 sent 2026-10-12; nudge 2 sent 2026-10-15; sequence done (no reply)
+2026-10-10,Sol Consulting (LinkedIn),Senior Salesforce Architect (contract $75/hr),-,-,-,skipped,company not identifiable (Vibe matched an unrelated Italian firm); no verified contact
+2026-10-10,"US staffing firms (Data Capital Inc, R Systems, BrothersTech, Oloop, Delta System & Software, Raas Infotek, AgileGrid)",Salesforce Developer roles (US remote),-,-,-,skipped,no JD/contact found; Apollo agent blocked on free plan - retry or LinkedIn Easy Apply
+2026-10-10,"Large US employers (Elastic, LexisNexis, Premise Health, Mindex)",Senior Salesforce Engineer / Architect,-,-,-,skipped,likely US-employee only (not verified); apply via careers site if desired
+2026-10-10,Insight Global,Remote Salesforce Developer ($65/hr),-,-,-,skipped,likely W2 US
+2026-10-10,"UK roles (Steadman Brown, Auxo Talent)",Salesforce Consultant / Developer,-,-,-,skipped,UK right-to-work likely required
+2026-10-11,Samson Software Solutions (JobRight),Senior Salesforce Developer (US remote),Kavya Malik,Technical Recruiter,kavya.malik@samsonsoft.com,bounced,550 5.4.1 recipient rejected (2026-10-11); replaced by Anu Dixit 2026-10-12; no nudges
+2026-10-11,Seven N Half (JobRight),Salesforce Developer (contract US remote),Pinkal Soni,Founder & Director (leader),pinkal@sevennhalf.com,sent (tailored resume; referral ask),nudge 1 sent 2026-10-13; nudge 2 sent 2026-10-16; sequence done (no reply)
+2026-10-11,Employvision (JobRight),Senior Salesforce nCino Developer,Mridhula Anandan,Talent Acquisition Specialist,mridhula@employvision.com,sent (tailored resume),nudge 1 sent 2026-10-13; nudge 2 sent 2026-10-16; sequence done (no reply)
+2026-10-11,Employvision (JobRight),Senior Salesforce nCino Developer,Harish Rao,Director - Clients & Delivery (leader),harish@employvision.com,sent (tailored resume; referral ask),nudge 1 sent 2026-10-13; nudge 2 sent 2026-10-16; sequence done (no reply)
+2026-10-11,NexLogic Systems (JobRight),CRM/Salesforce Developer RCI-PHS-1001 ($82/hr contract),-,-,-,skipped,no contacts found in Vibe/web; JD not found (possible public-sector prime); retry or apply via JobRight
+2026-10-11,CST Cyber Space Technologies (JobRight),Salesforce FSC Consultant/Developer,-,-,-,skipped,sibling roles hybrid Houston / H1B-W2 style; Vibe matched wrong company
+2026-10-11,Optomi (JobRight),Senior Salesforce Platform Engineer,-,-,-,skipped,W2 contract US remote only
+2026-10-11,Tenable (JobRight/LinkedIn),Salesforce Developer (US-Remote),-,-,-,skipped,US-based only; must be authorized without sponsorship
+2026-10-11,First Citizens Bank (JobRight),Senior Salesforce Developer,-,-,-,skipped,hire only in AZ/GA/MA/NC/NJ/TX
+2026-10-11,Cornell University (JobRight),Salesforce Platform Developer (CEMI),-,-,-,skipped,remote within US; no visa sponsorship
+2026-10-11,Coderio (JobRight),Salesforce Developer Sr,-,-,-,skipped,Miami hybrid
+2026-10-11,Wasabi Technologies (JobRight),Sr Business Systems Engineer (Salesforce & Billing),-,-,-,skipped,US/Canada FTE; sponsorship question
+2026-10-11,"Large US FTE roles (Coinbase, Motorola Solutions, Capgemini US, Endiem, Main Digital, Marsh, EIM, SunStrong)",Salesforce Developer/Engineer,-,-,-,skipped,US-resident FTE / onsite / federal-leaning; not contractor-friendly
+2026-10-11,Precision Technologies (JobRight),Salesforce Developer,-,-,-,skipped,staffing firm with onsite NY public-sector roles; JD not found
+2026-10-11,Non-dev / admin / BA / PM / QA / Commerce / Marketing Cloud roles (~40 JobRight cards),various,-,-,-,skipped,not a Salesforce developer/architect role per runbook
+2026-10-12,Samson Software Solutions (JobRight),Senior Salesforce Developer (US remote),Anu Dixit,Senior Technical Recruiter,anu.dixit@samsonsoft.com,sent (tailored resume; replaces bounced contact),nudge 1 sent 2026-10-13; nudge 2 sent 2026-10-16; sequence done (no reply)
+2026-10-13,Dynamic Catholic (JobRight),Salesforce Developer (remote OK),George Josten,Human Resources and Operations Manager,george.josten@dynamiccatholic.com,sent (tailored resume),nudge 1 sent 2026-10-14; nudge 2 due 2026-10-19
+2026-10-13,Dynamic Catholic (JobRight),Salesforce Developer (remote OK),Matthew Kelly,"Founder (leader, small org)",matthew.kelly@dynamiccatholic.com,sent (tailored resume; referral ask) - email from verified first.last pattern,nudge 1 sent 2026-10-14; nudge 2 due 2026-10-19
+2026-10-13,EBizCharge (JobRight),Senior Software Engineer (Salesforce),David Kim,VP Software Engineering (leader),david.k@ebizcharge.com,sent (tailored resume; referral ask),nudge 1 sent 2026-10-14; nudge 2 due 2026-10-19; no HR contact found in Vibe
+2026-10-13,VXForward (JobRight),Salesforce Developer - Remote,Vishnu Dommaraju,Recruitment management,vishnu@vxforward.com,sent (tailored resume),nudge 1 sent 2026-10-14; nudge 2 due 2026-10-19
+2026-10-13,McBride Consulting (JobRight),"Salesforce Developer (NYS DOL client, remote US)",-,-,-,skipped,"no verified contact: Vibe matched McBride plc (UK), company domain not found; retry"
+2026-10-13,Jacoby & Meyers (JobRight),Salesforce Developer,-,-,-,skipped,posting closed on Jobvite (LA)
+2026-10-13,Concentrix (JobRight),Salesforce Data360 Developer,-,-,-,skipped,posting no longer accepting applications
+2026-10-13,JWay Group (JobRight),Salesforce Developer (Order Management),-,-,-,skipped,remote for US residents only
+2026-10-13,Dario (JobRight),Software Developer - Salesforce Support,-,-,-,skipped,"JD is JS/React support role, not Salesforce dev"
+2026-10-13,"Federal-contractor roles (ICF incl. DHS, Index Analytics, NuAxis Innovations x2, Accenture Federal Dynamics, Salesforce PubSec FedCiv, Koniag, MongoDB FedRAMP)",Salesforce Developer / Architect,-,-,-,skipped,federal work: public trust / citizenship likely
+2026-10-13,"Large US FTE roles (Fulton Bank, GFiber, Synopsys SFDC DevOps, Pearson, Komodo Health)",Salesforce Developer / Engineer,-,-,-,skipped,"US-resident FTE, not contractor-friendly (not verified)"
+2026-10-13,"W2 / staffing contract (TMS LLC, PTR Global, Brooksource, KPI Partners)",Salesforce Developer / Consultant (contract),-,-,-,skipped,W2 stated (TMS) or JD/contact not found; likely W2
+2026-10-13,"German postings (Reifenhauser, Ailo-IT)",Senior Salesforce Developer / Architect (m/w/d),-,-,-,skipped,German-market roles
+2026-10-13,"Lower fit / JD not found (CauseMic, LaunchCode, Offprem FSC, Atom CX Lead, SourceFactor Delivery Lead, Hexaware Digital CRM, Louisiana Econ Dev)",various,-,-,-,skipped,"functional/delivery or junior role, or JD not found; retry if seen again"
+2026-10-17,Versapay (JobRight),Salesforce Developer (US remote),Cailyn Comeau,"Senior Manager, Talent (HR)",cailyn.comeau@versapay.com,sent (tailored resume),nudge 1 due 2026-10-20; nudge 2 due 2026-10-23
+2026-10-17,Versapay (JobRight),Salesforce Developer (US remote),Senthu Sivasambu,Software Architect (leader; ex-CTO),senthu.sivasambu@versapay.com,sent (tailored resume; referral ask),nudge 1 due 2026-10-20; nudge 2 due 2026-10-23
+2026-10-17,Monogram Health (JobRight),Senior Salesforce Developer (US remote),Kathryn Peluchette,"Senior Manager, Talent Acquisition",kathryn.peluchette@monogramhealth.com,sent 2026-10-18 (tailored resume; old draft deleted),nudge 1 due 2026-10-20; nudge 2 due 2026-10-23; no leader/architect found in Vibe; alt TA: Brittany Kolts brittany.goeringer@monogramhealth.com
+2026-10-17,Equality Health (JobRight),Salesforce Developer (US remote),Michael Clark,"Director, Product and Software Engineering (leader)",mike.clark@equalityhealth.com,sent 2026-10-18 (tailored resume; referral ask) - email catch-all,nudge 1 due 2026-10-20; nudge 2 due 2026-10-23; no HR contact found in Vibe
+2026-10-17,fusionSpan (JobRight),"Salesforce Technical Architect (US remote; B2B contract, worldwide)",Veronica Arevalo,Senior Talent Acquisition Specialist,varevalo@fusionspan.com,sent 2026-10-18 (tailored resume),nudge 1 due 2026-10-20; nudge 2 due 2026-10-23; CEO email not found
+2026-10-17,CoreSphere LLC (JobRight),Senior Salesforce Developer,-,-,-,skipped,US work authorization + Public Trust + 5 yrs US employment history required
+2026-10-17,ELYON International (JobRight),Salesforce Developer / Consultant (contract),-,-,-,skipped,federal VA contract; US citizenship required
+2026-10-17,Implify Inc (JobRight),SFDC Multiple openings,-,-,-,skipped,"in-office (Houston/other US sites), no remote"
+2026-10-17,Agility Technologies (JobRight),Salesforce Developer I/II/IV,-,-,-,skipped,"FedRAMP/government security context (Reston VA), US FTE with benefits; low fit for contractor"
+2026-10-17,PAHO (JobRight),"PAHO Consultant - Salesforce Developer (ITS) remote, $172/day",-,-,-,skipped,apply only via PAHO Workday portal (deadline 2026-10-26); no recruiter email - Akshay may apply himself if interested
+2026-10-17,Value Innovation Labs / Resolve Tech Solutions (JobRight),Salesforce CPQ Developer / Sr. Salesforce Developer,-,-,-,skipped,JD/company page not found (Resolve has no SF role listed); retry if seen again
+2026-10-17,"W2-only (Plumlogix OmniStudio, GTECH CPQ, Steneral CPQ) / EAD-OPT (Confidential)",Salesforce Developer roles,-,-,-,skipped,W2 only or US work-auth only
+2026-10-17,"Federal/gov (Thunder x3, ICF x2, Cherokee Federal, NC Dept of Agriculture, Guidehouse)",Salesforce Developer roles,-,-,-,skipped,federal/government: citizenship/clearance likely
+2026-10-18,Codiot Technologies LLP (LinkedIn post via Salesforce Jungle),Salesforce Developer (Remote; 8 PM-2:30 AM IST),HR inbox (from post),HR,hr@codiot.com,sent 2026-10-18 (tailored resume; manual test of laptop pipeline),source A-post; nudge 1 due 2026-10-19; nudge 2 due 2026-10-22
+2026-10-18,Capio Group (JobRight),Salesforce Developer (US remote; public-sector consulting),Sneha Sambaraju,Recruitment Specialist (JobRight Insider Connection),sneha.sambaraju@capiogroup.com,sent 2026-10-18 (tailored resume) - email via SalesQL (verified),source B-JobRight; nudge 1 due 2026-10-19; nudge 2 due 2026-10-22; leader/architect not yet emailed (small firm 11-50)
+2026-10-18,Veradigm (JobRight),"Sr Salesforce Developer, Business Systems & Integrations",-,-,-,skipped,must be authorized to work in US/Canada; no visa sponsorship

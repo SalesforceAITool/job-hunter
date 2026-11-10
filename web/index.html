@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Job Hunter</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <script>
+    // Apply the saved theme before first paint (dark is the default).
+    try { var t = localStorage.getItem('jh-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <a class="skip-link" href="#apps">Skip to applications</a>
+
+  <!-- ───────────── Top bar ───────────── -->
+  <header class="topbar" role="banner">
+    <div class="topbar-left">
+      <div class="brand">
+        <img src="/favicon.svg" alt="" width="22" height="22">
+        <span class="brand-name">Job Hunter</span>
+      </div>
+      <nav class="viewswitch" aria-label="Views">
+        <button type="button" class="vs-btn" data-view="jobs" aria-pressed="true">Jobs</button>
+        <button type="button" class="vs-btn" data-view="board" aria-pressed="false">Job board <span class="vs-n" hidden></span></button>
+        <button type="button" class="vs-btn" data-view="agencies" aria-pressed="false">Agencies</button>
+      </nav>
+      <div id="run-pill" class="pill pill-idle" role="status" aria-live="polite">
+        <span class="pill-dot" aria-hidden="true"></span>
+        <span class="pill-label">Idle</span>
+        <span class="pill-timer tnum" hidden></span>
+      </div>
+      <div id="last-run" class="last-run" title=""></div>
+    </div>
+    <div class="topbar-right">
+      <div id="live" class="live live-connecting" title="Connection to the local server">
+        <span class="live-dot" aria-hidden="true"></span><span class="live-label">Connecting…</span>
+      </div>
+      <select id="view-profile" class="btn btn-ghost" aria-label="Whose applications to show" hidden></select>
+      <button id="btn-run" class="btn btn-primary" type="button" title="Start a run (R)">
+        <svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7-4.5z" fill="currentColor"/></svg>
+        <span>Run now</span>
+      </button>
+      <button id="btn-stop" class="btn btn-danger" type="button" hidden>
+        <svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="currentColor"/></svg>
+        <span>Stop</span>
+      </button>
+      <button id="btn-theme" class="btn btn-icon" type="button" aria-label="Switch to light theme" title="Switch theme">
+        <svg class="ico ico-sun" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <svg class="ico ico-moon" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+      </button>
+      <button id="btn-settings" class="btn btn-icon" type="button" aria-label="Settings" title="Settings">
+        <svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M6.7 1.5h2.6l.4 1.9 1.3.7 1.8-.7 1.3 2.2-1.4 1.3v1.4l1.4 1.3-1.3 2.2-1.8-.7-1.3.7-.4 1.9H6.7l-.4-1.9-1.3-.7-1.8.7-1.3-2.2 1.4-1.3V7.4L1.9 6.1l1.3-2.2 1.8.7 1.3-.7z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><circle cx="8" cy="8" r="2" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div id="stale" class="stale" role="alert" hidden></div>
+  <main class="page" id="page-jobs">
+    <!-- ───────────── Run picker: what the next Run does ───────────── -->
+    <section id="runbar" class="runbar" aria-label="What to run">
+      <div class="runbar-group">
+        <span class="runbar-label" id="rb-lanes-l">Run</span>
+        <div id="rb-lanes" class="chips" role="group" aria-labelledby="rb-lanes-l"></div>
+      </div>
+      <div class="runbar-group" id="rb-regions-wrap">
+        <span class="runbar-label" id="rb-regions-l" title="For LinkedIn Jobs and Easy Apply">Regions</span>
+        <div id="rb-regions" class="chips" role="group" aria-labelledby="rb-regions-l"></div>
+      </div>
+      <div class="runbar-group" id="rb-watch-wrap">
+        <span class="runbar-label">Watch</span>
+        <div id="rb-watch" class="chips" role="group" aria-label="Watch mode"></div>
+      </div>
+      <div class="runbar-tools">
+        <button id="rb-all" class="btn btn-ghost btn-sm" type="button">All</button>
+        <button id="rb-none" class="btn btn-ghost btn-sm" type="button">Clear</button>
+        <span id="rb-note" class="runbar-note" aria-live="polite"></span>
+      </div>
+    </section>
+
+    <section id="needs" class="needs" aria-label="Needs you" hidden></section>
+    <div id="banners" class="banners"></div>
+
+    <!-- ───────────── KPI strip ───────────── -->
+    <section class="kpis" id="kpis" aria-label="Key numbers"></section>
+
+    <!-- ───────────── Live run ───────────── -->
+    <section class="panel live-panel" id="live-panel" aria-labelledby="h-live">
+      <div class="panel-head">
+        <h2 id="h-live">Live run <span id="run-id" class="head-meta tnum"></span></h2>
+        <div class="panel-tools">
+          <span id="run-note" class="head-note"></span>
+        </div>
+      </div>
+      <div class="live-grid">
+        <div class="lanes" id="lanes"></div>
+        <div class="feed-wrap">
+          <div class="feed-tools">
+            <div class="chips" id="feed-chips" role="group" aria-label="Filter activity by lane"></div>
+            <label class="check-inline"><input type="checkbox" id="feed-debug"> Debug</label>
+          </div>
+          <div class="feed" id="feed" role="log" aria-live="off" aria-label="Activity feed" tabindex="0"></div>
+          <button id="feed-resume" class="feed-resume" type="button" hidden>Paused · <span class="n">0</span> new lines</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────────── Applications ───────────── -->
+    <section class="panel apps-panel" id="apps" aria-labelledby="h-apps">
+      <div class="panel-head">
+        <h2 id="h-apps">Applications</h2>
+        <div class="panel-tools">
+          <div class="search">
+            <svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <input id="q" type="search" placeholder="Search company, role, contact" aria-label="Search applications" autocomplete="off">
+            <kbd>/</kbd>
+          </div>
+          <select id="source" aria-label="Filter by source">
+            <option value="">All sources</option>
+            <option value="posts">LinkedIn post</option>
+            <option value="jobright">JobRight</option>
+            <option value="linkedin_us">LinkedIn US</option>
+            <option value="linkedin_world">LinkedIn Worldwide</option>
+            <option value="linkedin_india">LinkedIn India</option>
+            <option value="himalayas">Himalayas</option>
+            <option value="jobicy">Jobicy</option>
+            <option value="hn">Hacker News</option>
+            <option value="careers">Career page</option>
+            <option value="agency">Agency</option>
+            <option value="manual">Manual</option>
+            <option value="import">History</option>
+          </select>
+        </div>
+      </div>
+      <div class="tabs" role="tablist" id="tabs"></div>
+      <div id="apps-body" class="apps-body"></div>
+    </section>
+
+    <!-- ───────────── Insights ───────────── -->
+    <section class="insights" aria-label="Insights">
+      <div class="panel chart-panel">
+        <div class="panel-head">
+          <h2>Applications per day <span class="head-meta">last 14 days</span></h2>
+          <div class="legend" id="chart-legend"></div>
+        </div>
+        <div class="chart" id="chart"></div>
+      </div>
+      <div class="panel funnel-panel">
+        <div class="panel-head"><h2>Funnel</h2></div>
+        <div id="funnel" class="funnel"></div>
+      </div>
+      <div class="panel replies-panel">
+        <div class="panel-head"><h2>Latest replies</h2></div>
+        <div id="replies" class="replies"></div>
+      </div>
+    </section>
+
+    <footer class="foot">Runs only on this computer at 127.0.0.1. Keyboard: <kbd>R</kbd> run, <kbd>/</kbd> search, <kbd>Esc</kbd> close.</footer>
+  </main>
+
+  <!-- ───────────── Agencies: a separate page (India vs outside India) ───────────── -->
+  <main class="page ag-page" id="page-agencies" hidden aria-labelledby="h-agencies"></main>
+  <main class="page ag-page jb-page" id="page-board" hidden aria-labelledby="h-board"></main>
+
+  <!-- ───────────── Detail drawer ───────────── -->
+  <div id="scrim" class="scrim" hidden></div>
+  <aside id="drawer" class="drawer" aria-hidden="true" aria-labelledby="drawer-title" role="dialog" tabindex="-1">
+    <div class="drawer-head">
+      <div class="drawer-title-wrap">
+        <h2 id="drawer-title">Application</h2>
+        <div id="drawer-sub" class="drawer-sub"></div>
+      </div>
+      <button class="btn btn-icon" type="button" id="drawer-close" aria-label="Close details (Esc)">
+        <svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div id="drawer-body" class="drawer-body"></div>
+  </aside>
+
+  <!-- ───────────── Settings modal ───────────── -->
+  <div id="modal" class="modal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div class="modal-head">
+        <h2 id="settings-title">Settings</h2>
+        <button class="btn btn-icon" type="button" id="modal-close" aria-label="Close settings (Esc)">
+          <svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <form id="settings-form" class="modal-body" autocomplete="off" novalidate></form>
+      <div class="modal-foot">
+        <span id="settings-status" class="foot-status"></span>
+        <button type="button" class="btn" id="settings-cancel">Cancel</button>
+        <button type="submit" form="settings-form" class="btn btn-primary" id="settings-save">Save settings</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toasts" class="toasts" aria-live="polite" aria-atomic="false"></div>
+  <div id="tooltip" class="tooltip" role="tooltip" hidden></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

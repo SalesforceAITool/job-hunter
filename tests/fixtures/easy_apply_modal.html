@@ -1,0 +1,17 @@
+<!doctype html><html><body><div id="interop-outlet"></div>
+<script>
+const host=document.getElementById('interop-outlet'); const sr=host.attachShadow({mode:'open'});
+sr.innerHTML=`<div role="dialog" class="jobs-easy-apply-modal"><h3>Additional Questions</h3>
+<div role="progressbar" aria-valuenow="50"></div>
+<div class="jobs-easy-apply-form-section__grouping"><label for="yrs"><span aria-hidden="true">How many years of work experience do you have with Apex?</span><span class="visually-hidden">How many</span></label><input id="yrs" type="text" required class="artdeco-text-input--input"></div>
+<div class="jobs-easy-apply-form-section__grouping"><label for="sel">Notice period</label><select id="sel" required><option value="">Select an option</option><option value="a">Immediately</option><option value="b">1 month</option></select></div>
+<fieldset><legend><span aria-hidden="true">Are you legally authorized to work in the United States?</span></legend>
+<input type="radio" name="auth" id="ry" value="Yes" required><label for="ry">Yes</label><input type="radio" name="auth" id="rn" value="No"><label for="rn">No</label></fieldset>
+<fieldset><legend>Which clouds?</legend><input type="checkbox" id="c1"><label for="c1">Sales Cloud</label><input type="checkbox" id="c2"><label for="c2">Service Cloud</label></fieldset>
+<label for="city">City</label><input id="city" role="combobox" aria-autocomplete="list">
+<label for="cover">Cover letter</label><textarea id="cover"></textarea>
+<input type="checkbox" id="follow" checked><label for="follow">Follow Acme</label>
+<footer><button aria-label="Back">Back</button><button aria-label="Continue to next step">Next</button></footer></div>`;
+window.changes=[]; sr.addEventListener('change',e=>window.changes.push(e.target.id+'='+(e.target.type==='checkbox'||e.target.type==='radio'?e.target.checked:e.target.value)),true);
+sr.querySelector('[aria-label="Continue to next step"]').addEventListener('click',()=>{window.nextClicked=true; const f=sr.querySelector('footer'); f.innerHTML='<button aria-label="Submit application">Submit application</button>';});
+</script></body></html>

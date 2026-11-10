@@ -1,0 +1,192 @@
+# Akshay's original resume content (verbatim, only date typos fixed), re-typeset compactly.
+SKILLS_SUMMARY = [
+"7+ years of Salesforce Technology experience in developing business processes and system solutions based on cloud platform Salesforce CRM and Force.com",
+"Salesforce certified professional (11 certifications), worked on many features of Salesforce in Sales journey and Service journey.",
+"Hands-on Agentforce delivery: service and sales agents with topics, custom actions (Flows, Apex, prompt templates), Data Cloud grounding (data streams, DLOs, search indexes, retrievers), Messaging for In-App and Web and Omni-Channel routing.",
+"Configured Service Cloud Voice with Amazon Connect and Agentforce prompts for AI-generated call summaries and response suggestions.",
+"Envisaging and architecting solutions in Salesforce based on complex customer requirements e.g., integration of Salesforce with many boundary systems.",
+"Project planning and release management with strategy for deployments.",
+"Certified Salesforce professional holding PD1, PD2, Sharing and Visibility Architect, OmniStudio Developer, Advanced Administrator, Data Cloud Consultant and AI Specialist certifications notably.",
+"Experience in integrating SFDC with Legacy applications using REST APIs.",
+"Experience in JavaScript, such as following best practices around ECMAScript 6+, using Promise object etc.",
+"Experienced in Salesforce Lightning UI. Created Lightning Apps combining Lightning Design System, Lightning App Builder and Lightning Component features.",
+"Experience in customizing Data model of Salesforce.com CRM using Flows, Triggers, Validation Rules, and Approval Processes.",
+"Experience in implementing Apex Classes, Triggers, Batch Apex, Test Classes, Visual force pages, Web Service to achieve business functionalities.",
+"Strong knowledge of Salesforce configuration, data migration, system integration and familiarity with Visual force (Pages, Components, Controllers) MVC architecture and Apex (Classes, Controllers &amp; Triggers).",
+"Extensive experience in Salesforce Implementations &amp; migrations.",
+"Rich experience in Administration and Development of Salesforce.com CRM using Force.com, Visual force and APEX.",
+"Knowledge of application and solution design.",
+"Quality gate for code review team.",
+"Member of Salesforce Center of Excellence team, which includes product owner, project sponsors, technical architects, and project managers.",
+"Strong knowledge of software development process and play key role in various aspects of Salesforce.com implementation and integration along with Architecture design, development planning and technical solution complying with Force.com platform standards/governor limits.",
+"Project planning and execution following agile methodologies.",
+"Consulting, requirement analysis, designing solutions, configure, develop business solution and production deployment for projects.",
+"Resolved APEX CPU limit and heap size issues by optimizing code and implementing efficient algorithms.",
+"Developed a robust framework for custom report functionality using OOP concepts such as inheritance, interfaces, abstract classes, and virtual classes and LWC.",
+"Build custom solutions that support business requirements and drive key business decisions using standard and custom features of Salesforce.",
+"Learning new technologies based on project requirements",
+"Development and Code review for best practices and design patterns.",
+"Estimating story hours and capacity planning of the sprint.",
+]
+WORK = [
+("Forcesap IT Solution / Salesforce Consultant", "Oct 2023 &ndash; Present, India"),
+("Hexaware / Senior Salesforce Developer", "Sep 2021 &ndash; Oct 2023, Dubai"),
+("Deloitte Pvt. Ltd. / DC Consultant", "Mar 2019 &ndash; Mar 2021, Bangalore"),
+("Trekbin Solutions Pvt. Ltd. / System Executive", "Sep 2017 &ndash; Jan 2019, Bangalore"),
+]
+TECH_SKILLS = ("Lightning/Aura Components, Apex, Visual force, SOQL / SOSL, Triggers Framework, Automation (Workflow Rule, Process Builder, Flows). "
+"Organization and User setup, Profiles and Permission sets, OWD, Role Hierarchy, Sharing Rule, Managed Apex Sharing, Reporting and Dashboards. "
+"Data Loader, Chatter, Custom Labels and Settings, Translation Workbench, Sales Cloud, Service Cloud - CTI, Marketing and Campaigning, Packaging. "
+"Event Log Monitoring, Live Agent Setup, Lightning Web Components, Salesforce CPQ (SBQQ) and Advanced Approvals (sbaa), SAP integration. "
+"<b>Cloud:</b> Sales Cloud, Service Cloud, Experience Cloud, Health Cloud. <b>Tools:</b> IDE, JIRA, VSCode, Azure, FlowSome, Git, Bitbucket, CI/CD pipelines. <b>AI tools:</b> Claude Code, Codex, Cursor")
+# rows of the TECHNICAL HIGHLIGHTS table (classic layout); "Technical Skills:" is bold like the original
+TECH_ROWS = [
+("Technical Skills:", "Lightning/Aura Components, Apex, Visual force, SOQL / SOSL, Triggers Framework, Automation (Workflow Rule, Process Builder, Flows).<br/><br/>"
+ "Organization and User setup, Profiles and Permission sets, OWD, Role Hierarchy, Sharing Rule, Managed Apex Sharing, Reporting and Dashboards.<br/><br/>"
+ "Data Loader, Chatter, Custom Labels and Settings, Translation Workbench, Sales Cloud, Service Cloud - CTI, Marketing and Campaigning, Packaging.<br/><br/>"
+ "Event Log Monitoring, Live Agent Setup, Lightning Web Components, Salesforce CPQ (SBQQ) and Advanced Approvals (sbaa), SAP integration."),
+("Agentforce", "Agentforce agents (topics, instructions, custom actions with Flows, Apex and prompt templates), Prompt Builder, Data Cloud data streams, DLOs, search indexes and retrievers, Knowledge, Messaging for In-App and Web, Omni-Channel, Einstein Bots, Service Cloud Voice with Amazon Connect"),
+("Cloud", "Sales Cloud, Service Cloud, Experience Cloud, Health Cloud, Data Cloud"),
+("Tools - IDE", "JIRA, VSCode, Azure, FlowSome, Git, Bitbucket, CI/CD pipelines"),
+("AI tools", "Claude Code, Codex, Cursor, prompt engineering"),
+]
+OTHER_CERTS = ["Python for Everybody (University of Michigan, Coursera)",
+               "Introduction to Data Science in Python (University of Michigan, Coursera)"]
+CERTS = [
+"Salesforce Certified Associate",
+"Salesforce Certified Administrator (ADM-201)",
+"Salesforce Certified Advanced Administrator (ADM-211)",
+"Salesforce Certified Platform App Builder",
+"Salesforce Certified Platform Developer I (PD1)",
+"Salesforce Certified Platform Developer II (PD2)",
+"Salesforce Certified Sharing and Visibility Architect",
+"Salesforce Certified OmniStudio Developer",
+"Salesforce Certified Data Cloud Consultant",
+"Salesforce Certified AI Associate",
+"Salesforce Certified AI Specialist",
+]
+PROJECTS = [
+("Agentforce Service Agent and Sales Coach Agent for NISSAN &mdash; Forcesap IT Solution",
+ "End-to-end Agentforce solution on Data Cloud and Service Cloud for one of the world's largest automobile companies: AI-powered, context-aware help for customers and internal agents on general FAQs, WISMO, warranty and vehicle service questions, plus a sales coach agent.",
+ [
+ "Created agent topics for each use case and mapped them to custom actions built with Flows, Apex and prompt templates, so the agent selects the right topic and retrieves the right data for each response.",
+ "Configured prompt templates and instructions with the correct input and output variables to guide intent detection and format the chat responses.",
+ "Uploaded knowledge files and datasets to Data Cloud and built a Knowledge Articles data stream, data model and Data Lake Objects (DLO) for knowledge-based answers.",
+ "Deployed the agent on an Experience Cloud page with Messaging for In-App and Web (MIAW); enabled automatic case creation and Omni-Channel routing to the right representatives by query type.",
+ "Connected Einstein Bots and the Agentforce chat interface so conversations transfer between them; configured security, permission sets and routing for the agent.",
+ "Sales coach agent: topics for account analysis, deal risk scoring, opportunity and renewal coaching, financial analysis and pricing insights, using prompt templates over account, opportunity, campaign and sentiment data, with Flows driving next-best-action suggestions.",
+ ]),
+("Agentforce Customer Service Agent for ASDA (retail &amp; e-commerce) &mdash; Forcesap IT Solution",
+ "Agentforce implementation that automates customer conversations and improves service efficiency, integrated with the Salesforce ecosystem and grounded in a structured FAQ built on Knowledge Articles.",
+ [
+ "Designed and configured Agentforce agents, including prompt templates, instructions and conversation flows for efficient query handling.",
+ "Developed Knowledge Articles in the Data Library and structured FAQs; built the Data Cloud data stream, data model, DLOs, search index and retrievers for retrieval-based answers.",
+ "Implemented and validated REST API integrations for real-time order status, delivery updates and customer details using Postman.",
+ "Configured and deployed Messaging for In-App and Web (MIAW): channels, routing, pre-chat forms, UI customization and escalation handling.",
+ "Automated backend processes with Salesforce Flows, integrated Agentforce with Einstein Bots, and ran end-to-end testing, debugging and performance tuning of agent conversations.",
+ ]),
+("Service Cloud Voice with Amazon Connect and Agentforce for SINGAPORE AIRLINES &mdash; Forcesap IT Solution",
+ "Customer support solution on Salesforce Service Cloud Voice integrated with Amazon Connect for inbound calls, automatic case creation, screen pop and AI-powered agent assistance with Agentforce.",
+ [
+ "Configured Service Cloud Voice with Amazon Connect and set up inbound voice routing with Omni-Channel flows.",
+ "Configured real-time call recording and transcript storage, Voice Call object layouts, permission sets and Lightning Console utilities.",
+ "Integrated Agentforce prompts for AI-generated customer summaries and response suggestions during live calls; built a POC for Agentforce with Amazon Connect partner telephony.",
+ "Implemented customer phone-number matching with Apex and Flow, and customized the Service Console with Lightning App Builder.",
+ ]),
+("Amkor Technology &mdash; Salesforce CPQ pricing &amp; quoting platform (semiconductor assembly &amp; test) &mdash; Forcesap IT Solution (current engagement)",
+ None,
+ [
+ "Owned the platform end to end: 79 custom objects, 4,885 custom fields, 134 Apex classes with 124 test classes, 19 triggers, 132 flows, 58 Lightning Web Components, 139 validation rules and 70 Lightning pages, over a data model spanning 18 sales regions, 7 plants, 5 factories and 10 business units.",
+ "Replaced a spreadsheet-and-email quote approval process with a 7-stage routing pipeline on Salesforce CPQ (SBQQ v258) and Advanced Approvals (sbaa v244). An assembly-and-test quote line needs input from test engineering, test services, BU pricing and corporate pricing before a customer sees a number; extended SBQQ__QuoteLine__c with 146 fields and built routing, per-BU assignment and escalation across all 6 pricing business units, stage-age and queue-day tracking, automatic roll-up to Opportunity status, and row-level access via account-derived public groups. Every quote line now has one accountable owner and an auditable escalation path.",
+ "Built the custom price-record engine underneath CPQ, because assembly and test pricing depends on package geometry, lead count, wire, substrate, die and metal content rather than on a SKU, which standard product and price-book pricing cannot express. Modelled a 270-field price record with a 10-stage lifecycle across Core, Target and PDL price levels plus ~30 package-attribute objects, and derived package, dimension and lead-count codes entirely from Custom Metadata: 636 rule-book mapping records and 285 package-group service records covering 53 package families and 51 package groups. Pricing analysts now configure a new package type in metadata instead of raising a development ticket.",
+ "Turned hard-coded pricing formulas into a configurable rule engine. Every new probe, test, adder or CPU-based formula previously required an Apex change and a release. Built formula rules assigned per Price Agreement Group and a 336-line safe expression evaluator (regex-allowlisted tokenizer, infix-to-postfix parser, ROUND support) so admin-authored expressions execute without dynamic Apex, alongside a 974-line rule-application service, authoring and preview LWCs, validation and activation flows, and per-service decimal precision enforcement.",
+ "Delivered the chunked, resumable SAP pricing-upload integration. A single price agreement can carry thousands of price records, far beyond one callout, and partial failures used to leave Salesforce and SAP out of sync. Built a batch pipeline that assembles the SAP sales-deal payload and splits it into sequenced 500-record messages, 5 price agreements per run at batch scope 2,000, with 3-attempt retry, stateful sequence tracking and delta paths for amendments and expirations; a scheduler chains four batches per cycle and a REST resource reconciles asynchronous SAP acknowledgements back onto the lifecycle stage. Also built four inbound REST services over a named credential with external-credential auth.",
+ "Made approvals, revision history and integration failures traceable on-platform: approvals on the Salesforce Approvals framework (ApprovalWorkItem) with supporting LWCs and group-assigned workflows, a metal-base-price approval routed to a pricing supervisor queue, blank-price guards and full recall paths; a snapshot object with batch revision and rollback so revisions no longer overwrite history; and an error-log and monitoring layer emailing an hourly summary of stuck price agreements and failed price records.",
+ "Built the mass-pricing and document-generation layer: an Excel bulk pipeline for customer RFQ workbooks where column-to-field mapping is held as data, so a new workbook layout needs no code; editing grids driven by field-set metadata keyed on profile and service group; a platform event so grids refresh live after batch updates; and price-agreement publication chunked at 11,500 records per run. Migrated the access model from 30 profiles to 58 permission sets across 21 permission set groups.",
+ ]),
+("Salesforce OmniStudio for BLUE CROSS BLUE SHIELD OF MASSACHUSETTS (BCBSMA)",
+ "Health insurance website (<a href='https://www.bluecrossma.org/' color='#0b5cad'><u>bluecrossma.org</u></a>) where members compare and select medical insurance plans through a guided OmniStudio experience.",
+ [
+ "Built the complete plan shopping website on OmniStudio, with OmniScripts guiding members step by step through eligibility, plan comparison and selection on the website.",
+ "Designed FlexCards to display plan benefits, premiums and coverage details in a consistent, reusable way across the journey.",
+ "Used Integration Procedures and DataRaptors (Extract, Transform and Load) to fetch plan and rate data and save member selections back to Salesforce.",
+ ]),
+("Salesforce Sales Cloud for leading BELDEN company",
+ "Belden Inc. is a U.S.-based company that designs, manufactures, and markets a broad portfolio of networking, connectivity, and cable products. It serves industries such as telecommunications, industrial automation, broadcast, data centers, and enterprise networking. Identify duplicate accounts and merge them based on specific criteria.",
+ [
+ "Data Deduplication Logic: identify duplicate accounts across different legacy systems and consolidate them. Use a batch process to handle large volumes of account data. Create logic based on physical address and DUNS Number.",
+ "Select the surviving account: use a set of rules (e.g., most recent update, most complete data, highest priority). Only the selected \"surviving\" account remains after the merger process.",
+ "Merge non-surviving (duplicate) accounts into the surviving account, ensuring no valuable data is lost. Implement rules to transfer relevant data from non-surviving accounts.",
+ "Resolve conflicting fields (e.g., prioritize the most recent update or merge fields like phone numbers into a list). Ensure each field in the non-surviving account is properly mapped to the corresponding field in the surviving account.",
+ "Exclude certain records from the deduplication process based on predefined criteria. Define rules for exclusion (if that record type of account is Belden or that record is coming from marketing cloud).",
+ "Integrate logic in the batch process to check if they meet exclusion criteria. Maintain separation: ensure excluded records are not processed or merged. Excluded records remain untouched, ensuring compliance with business rules.",
+ "Configure the D&amp;B Connect with Salesforce to enrich the correct data and create/update account information.",
+ ]),
+("Salesforce Real Estate Experience for a leading company DUBAI HOLDING",
+ "Implement a Lightning Web Component (LWC) to generate and download finance reports related to the Payment Plan object. The reports assist the finance team in verifying payments and performing invoice or other financial calculations. The implementation involved building 9 distinct reports, all accessible through a single, generic LWC component.",
+ [
+ "Dynamic Report Selection: users can select the specific report they want to download from a dropdown menu within the LWC. The component includes filtering options (such as date ranges or payment statuses) to customize the report output before downloading.",
+ "File Format: reports are generated in CSV format and downloaded to the local system for offline verification by the finance team.",
+ "Custom Metadata Configuration: the LWC uses custom metadata to store and configure the SOQL queries for each of the 9 reports, so queries can be updated without changing the core LWC logic. The generic component dynamically generates each report, enabling reuse of the same code for all reports.",
+ "Handling Large Data Volumes: Salesforce has a 50,000 record limit for SOQL queries. To overcome this, the solution calls Apex classes multiple times asynchronously to fetch payment plan records in manageable batches.",
+ "Avoiding Heap Size and CPU Limits: report data is processed on the client side (JavaScript) to avoid governor limits like heap size or Apex CPU time. Records are fetched in smaller batches and processed incrementally.",
+ "CSV Generation on Client Side: once data is fetched asynchronously, the CSV is built in JavaScript, preventing the heap size limit that server-side (Apex) generation would hit.",
+ "Performance and User Experience: asynchronous Apex calls and client-side processing keep the component fast; filter-based reports and a seamless download significantly improved the finance team's ability to verify payment plans and generate invoices.",
+ ]),
+("Salesforce Real Estate Experience for a leading Druce",
+ "The project for Druce, an organization managing the secondary market for properties, involves customizing and configuring Salesforce to streamline property management processes.",
+ [
+ "Integration with Druce Website: developed a REST API integration between Salesforce and the Druce website to synchronize property listings in real time.",
+ "Zoopla: integrated to access property market data and pricing trends for accurate evaluation. Fixflo: integrated to retrieve data on property maintenance costs. Rightmove: integrated to gather additional property information and compare prices with similar listings.",
+ "Lightning Web Components: created LWC components to view, edit, and update property information efficiently. Implemented a custom approval process for property listings: once a photographer uploads pictures of a property, it goes through approval before being listed.",
+ "Project Configuration: configured Salesforce for efficient property management, customer communication, and data organization. Leveraged Azure for deployment of Salesforce customizations and configurations.",
+ ]),
+("Salesforce Real Estate Experience for a leading EMAAR Company",
+ "The application is designed to manage property bookings, customer creation, and invoicing for the company's customers. The goal of the project is to migrate the existing booking and invoicing processes from Oracle to Salesforce, in order to streamline operations and improve data visibility for Emaar.",
+ [
+ "Developed a REST API integration between Salesforce and Fusion to enable seamless communication between the two systems.",
+ "Configured the integration to send data related to property bookings, customer creation, and cancellations from Salesforce to Fusion.",
+ "Worked closely with the Fusion team to ensure that data was properly formatted and validated before being sent via the API.",
+ "Used Apex code to make REST API calls from Salesforce to Fusion and parse the response data.",
+ "Implemented error handling and logging so that any issues with the integration were identified and resolved in a timely manner.",
+ "Conducted testing and debugging of the integration to ensure that it met the requirements and performed optimally.",
+ ]),
+("Salesforce Sales Cloud Experience for a leading Deloitte (Siemens) company",
+ None,
+ [
+ "Global Rollout: phased implementation replacing Oracle CRM with Salesforce, ensuring seamless transition across regions.",
+ "Integrations: built prototypes and implemented boundary system integrations with Salesforce.",
+ "Technical Landscape: defined a new middleware-based architecture to streamline integration and improve efficiency.",
+ "Best Practices: enforced Salesforce best practices, ensured language compatibility, and maintained high-quality standards through code reviews and best practice tools.",
+ "Sprint Planning: groomed user stories for sprints, worked closely with stakeholders to prioritize tasks, and defined solution approaches for implementation.",
+ "Knowledge Transfer: managed release planning and facilitated smooth knowledge transfer across teams.",
+ "Device-Friendly Solutions: developed both custom and out-of-the-box solutions compatible with mobile devices.",
+ "Data Migration: managed data modeling and migration from existing systems to Salesforce.",
+ "Revenue Generation: contributed to client proposals, securing additional revenue through future enhancements.",
+ "Proof of Concept: developed POCs to validate the feasibility of user stories for future sprints.",
+ "Stakeholder Engagement: demonstrated user journeys and solutions to product owners and sponsors.",
+ ]),
+("Salesforce Experience Cloud and Health Cloud Implementation for a leading Life Sciences Company of USA",
+ "Cell therapies are revolutionizing the treatment of disease. Subjects suffering from rare genetic disorders are involved in the clinical trial phase, matched cells are imported from t-cell banks and infused into the patients. The Cellution platform is built on Salesforce Health Cloud and Experience Cloud, giving internal Cell Evolve employees and key external vendors visibility into the lifecycle of the study.",
+ [
+ "Implement LWC Component to show the Cell Match Results and select the vials record for Order.",
+ "Build reports and dashboards for users to navigate and see Donor and company information.",
+ "Customize the community based on client requirement and build multiple pages. Configure multiple communities for business like CRO, Cryoport, Hospital.",
+ "Development of Apex Classes, Triggers, Apex integration, Test class development. Implement the trigger framework and Apex class for Cell Selection.",
+ "Implementing Scheduler classes for daily sync of data (business entity objects).",
+ "Working with process builder, workflow rules, case assignment rules. Create data model and finalize the approaches for it.",
+ "Development of new enhancements and providing support to existing functionality.",
+ ]),
+("Salesforce Implementation for a leading Global Waste Management Company",
+ "Waste Management sends trash trucks to commercial and residential customers, picks up the trash and converts it into electricity. Customers register on WM.com to schedule pickup. The existing WM service is built on SharePoint; a new service was built on top of it using Salesforce.",
+ [
+ "Create Lightning Web Component and Trigger which creates alerts in Salesforce and syncs back to Heroku only when published. Use Lightning Data Service and Lightning Design System to create custom alerts.",
+ "Interacting with the client to understand business requirements, mapping them to technical requirements and proposing a technical solution with estimation.",
+ "Integrated Salesforce.com with external applications by setting up OAuth authentication between the client and the Force.com platform using Apex RESTful Services.",
+ "Implement the connection between Heroku and Salesforce so the same data can sync. Perform unit testing and user acceptance testing.",
+ ]),
+]
+
+# resume project keys, aligned with PROJECTS above (used for the tailored project order)
+PROJECT_KEYS = ["nissan", "asda", "scv", "amkor", "bcbsm", "belden", "dubai", "druce", "emaar", "siemens", "lifesci", "wm"]
+assert len(PROJECT_KEYS) == len(PROJECTS)

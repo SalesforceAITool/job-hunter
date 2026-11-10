@@ -1,0 +1,7 @@
+# never in git: personal data, secrets, generated files
+data/
+*.pdf
+*.docx
+__pycache__/
+*.pyc
+*.log

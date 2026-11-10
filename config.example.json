@@ -1,0 +1,27 @@
+{
+  "port": 8765,
+  "auto_run_on_open": false,
+  "parallel_sources": false,
+  "dry_run": true,
+  "max_emails_per_run": 25,
+  "email": {
+    "backend": "smtp",
+    "address": "akshay.verma0031@gmail.com",
+    "app_password": "",
+    "from_name": "Akshay Verma"
+  },
+  "engine": {
+    "claude_path": "",
+    "claude_args": ["--chrome", "--permission-mode", "dontAsk", "--allowedTools", "mcp__jobhunt__*", "mcp__claude-in-chrome__*", "--disallowedTools", "Agent", "--strict-mcp-config", "--max-turns", "150"],
+    "lane_timeout_min": 25,
+    "mock": false,
+    "model": ""
+  },
+  "profile": {
+    "name": "Akshay Kumar Verma",
+    "email": "akshay.verma0031@gmail.com",
+    "phone": "+91 75664 42162",
+    "linkedin": "linkedin.com/in/akshay-kumar-18565910a",
+    "location": "India (remote, US hours)"
+  }
+}
