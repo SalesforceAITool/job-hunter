@@ -142,5 +142,34 @@ class DailyReportTests(TempData, unittest.TestCase):
         self.assertIsNone(self.conn.execute("SELECT v FROM app_meta WHERE k=?", (report.META_KEY,)).fetchone())
 
 
+class GmailRefusalTests(unittest.TestCase):
+    """A message Gmail refuses (550 5.4.5 daily limit) was not delivered: never 'may have been delivered'."""
+
+    def fake_smtp(self, exc):
+        import smtplib
+
+        class S:
+            def __init__(self, *a, **k): pass
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+            def login(self, *a): pass
+            def send_message(self, msg): raise exc
+        return S
+
+    def check(self, exc):
+        from unittest import mock
+        from jh import mailer
+        cfg = {"email": {"backend": "smtp", "address": "a@example.com", "app_password": "x" * 16}}
+        with mock.patch("smtplib.SMTP_SSL", self.fake_smtp(exc)):
+            with self.assertRaises(mailer.MailError) as cm:
+                mailer.send(cfg, "hr@example.com", "s", "b")
+        return cm.exception.maybe_sent
+
+    def test_refused_is_not_maybe_sent(self):
+        import smtplib
+        self.assertFalse(self.check(smtplib.SMTPDataError(550, b"5.4.5 Daily user sending limit exceeded.")))
+        self.assertTrue(self.check(smtplib.SMTPServerDisconnected("Connection unexpectedly closed")))
+
+
 if __name__ == "__main__":
     unittest.main()

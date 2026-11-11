@@ -119,8 +119,11 @@ def send(cfg, to, subject, body, attachment_path=None, in_reply_to=None, referen
         if delivered:  # the server accepted the message; only QUIT/close failed - it IS sent
             log.warning("SMTP error after the message to %s was accepted (ignored): %s", to, e)
             return msg["Message-ID"]
+        # SMTPDataError: Gmail answered the message itself with a refusal (e.g. 550 5.4.5 daily sending limit) - it
+        # was NOT delivered, so it must not be recorded as sent (11 Nov: 15 follow-ups were counted as sent that way)
         raise MailError("SMTP send failed: %s" % e,
-                        maybe_sent=handed and not isinstance(e, (smtplib.SMTPRecipientsRefused, smtplib.SMTPSenderRefused)))
+                        maybe_sent=handed and not isinstance(e, (smtplib.SMTPRecipientsRefused, smtplib.SMTPSenderRefused,
+                                                                 smtplib.SMTPDataError)))
     return msg["Message-ID"]
 
 
