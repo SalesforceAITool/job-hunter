@@ -9,6 +9,10 @@ filter_jobs(items)      -> each item is new / seen / retry
             (the job is NOT re-read; its job_id is returned). Handed out once per job.
 filter_profiles(urls)   -> LinkedIn profiles never looked up before
 record_profile(url, found)
+filter_posts(run_id, urls) -> LinkedIn posts never read before (Akshay, 11 Nov: every post the posts lane has
+    looked at is remembered, hiring or not, so a 10-minute cycle never re-reads the same posts; a search page with
+    nothing new is skipped without reading it). A post counts as read once the posts lane that saw it FINISHED
+    ('done'); a lane that crashed or was stopped gives its posts back.
 """
 import re
 from datetime import timedelta
@@ -116,3 +120,53 @@ def record_profile(conn, url, found=False, lane=None) -> dict:
                  " ON CONFLICT(slug) DO UPDATE SET found=MAX(found, excluded.found), last_ts=excluded.last_ts,"
                  " tries=tries+1", (s, url, 1 if found else 0, lane, now, now))
     return {"ok": True}
+
+
+# --------------------------------------------------------------------------- LinkedIn posts already read
+
+_POST_ID = re.compile(r"(?:urn:li:|urn%3Ali%3A)(?:activity|share|ugcPost)(?::|%3A)(\d{10,25})|activity-(\d{10,25})", re.I)
+
+
+def post_id(url: str) -> str:
+    """LinkedIn post id from a feed/update URN link or a /posts/...-activity-<id>- link ("" if none)."""
+    m = _POST_ID.search(str(url or ""))
+    return (m.group(1) or m.group(2)) if m else ""
+
+
+def filter_posts(conn, run_id, urls) -> dict:
+    """-> {"new": [urls to read], "seen": n, "no_id": n}. New posts are remembered for this run at once (so a
+    post found by two searches is read once); they count as read for later runs when this lane finishes."""
+    new, seen, no_id, now, done = [], 0, 0, db.now_iso(), set()
+    rid = run_id if isinstance(run_id, int) else None
+    for u in (urls or [])[:100]:
+        u = str(u or "").strip()[:300]
+        pid = post_id(u)
+        if not pid:
+            if u:
+                no_id += 1
+                new.append(u)                       # can't tell: let the AI check it (screen_jobs dedupes saved ones)
+            continue
+        if pid in done:
+            seen += 1
+            continue
+        done.add(pid)
+        r = conn.execute("SELECT run_id, status FROM post_seen WHERE post_id=?", (pid,)).fetchone()
+        saved = conn.execute("SELECT 1 FROM jobs WHERE url LIKE ? LIMIT 1", ("%" + pid + "%",)).fetchone()
+        if saved or (r and (r["status"] == "done" or (rid is not None and r["run_id"] == rid))):
+            seen += 1
+            continue
+        conn.execute("INSERT INTO post_seen (post_id, url, run_id, status, first_seen, updated_at) VALUES (?,?,?,?,?,?)"
+                     " ON CONFLICT(post_id) DO UPDATE SET run_id=excluded.run_id, status='pending',"
+                     " updated_at=excluded.updated_at", (pid, u, rid, "pending", now, now))
+        new.append(u)
+    return {"new": new, "seen": seen, "no_id": no_id}
+
+
+def close_posts(conn, run_id, ok: bool) -> int:
+    """Posts lane finished: its posts count as read ('done'), or go back to unread if the lane failed/stopped."""
+    if not isinstance(run_id, int):
+        return 0
+    if ok:
+        return conn.execute("UPDATE post_seen SET status='done', updated_at=? WHERE run_id=? AND status='pending'",
+                            (db.now_iso(), run_id)).rowcount
+    return conn.execute("DELETE FROM post_seen WHERE run_id=? AND status='pending'", (run_id,)).rowcount

@@ -59,7 +59,11 @@ DEFAULTS = {
     "li_fast": {"on": True, "every_min": 30, "per_run": 5, "daily_cap": 30, "start_hour": 8, "end_hour": 24,
                 # Akshay, 10 Nov: one LinkedIn cycle (Easy Apply jobs + hiring posts) every 2 hours, and the next AI
                 # cycle only gap_after_min minutes after the previous one FINISHED, to save tokens (0 = no gap)
-                "lanes": ["easy_apply"], "gap_after_min": 0},
+                "lanes": ["easy_apply"], "gap_after_min": 0,
+                # Akshay, 11 Nov (token saving): before each cycle, read LinkedIn's PUBLIC Easy Apply list (logged out,
+                # no AI, one request per region) and send the AI only jobs never seen before; nothing new -> no Easy
+                # Apply AI run. The public list unreadable -> the AI searches LinkedIn itself, as before.
+                "probe": True},
     # extra ways to a VERIFIED work email when SalesQL finds none (jh/emailfind.py); keys optional, free tiers work
     "email_finder": {"hunter_api_key": "", "apollo_api_key": "", "daily_cap": 25},
     "roles": "developer",     # Akshay, 30 Oct: apply only to Salesforce Developer/Engineer roles ("all" = any SF role)
@@ -326,6 +330,7 @@ def apply_update(cfg: dict, incoming: dict, from_api: bool = False) -> dict:
         lf["gap_after_min"] = min(600, max(0, int(lf.get("gap_after_min"))))
     except (TypeError, ValueError, OverflowError):
         lf["gap_after_min"] = 0
+    lf["probe"] = _as_bool(lf.get("probe", True))
     out["li_fast"] = {k: lf[k] for k in DEFAULTS["li_fast"]}
     out["skip_architect"] = _as_bool(out.get("skip_architect", True))
     out["focus_linkedin"] = _as_bool(out.get("focus_linkedin", False))

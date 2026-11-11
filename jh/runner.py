@@ -206,6 +206,12 @@ def _run_ai_lane(engine, lane, run_id, cfg, emit, stop, db_path, results, starte
     counts = dict(eng_counts)
     counts.update(_lane_counts(emit.conn(), run_id, lane))
     data = {"status": status, "counts": counts, "elapsed_s": round(time.time() - t0, 1), **extra}
+    if lane == "posts":
+        try:      # posts this lane listed count as read only if it finished (a crash gives them back)
+            from . import seen
+            seen.close_posts(emit.conn(), run_id, status == "done")
+        except Exception as e:
+            emit(lane, "warning", "Could not update the read-posts list: %s" % e, "warn")
     level = {"done": "success", "error": "error"}.get(status, "warn")
     emit(lane, "lane_finished", "%s %s" % (lane, status), level, data)
     results[lane] = data
@@ -262,6 +268,11 @@ def _run_himalayas(engine, run_id, cfg, emit, stop, db_path, results):
     _run_ai_lane(engine, lane, run_id, dict(cfg, _targets=targets), emit, stop, db_path, results, started=True, t0=t0)
 
 
+def _short_name(x, n=30):
+    x = str(x or "?").strip()
+    return x if len(x) <= n else x[:n - 1] + "…"
+
+
 def _ext_id(url):
     import re
     m = re.search(r"/jobs/view/(?:[^/?#]*-)?(\d{6,15})", url or "")
@@ -277,29 +288,49 @@ def _run_li_lane(engine, lane, run_id, cfg, emit, stop, db_path, results):
     t0 = time.time()
     emit(lane, "lane_started", "Starting %s" % lane)
     watch_t = (cfg.get("_targets") or []) if lane == "easy_apply" else []
+    # saved jobs handed back for one more Easy Apply try (a form that stopped on the old application email):
+    # straight to the AI, no search, no re-screening
+    redo = [{"job_id": t["job_id"], "company": t.get("company") or "", "role": t.get("role") or t.get("title") or "",
+             "url": "https://www.linkedin.com/jobs/view/%s/" % _ext_id(t.get("url")), "location": t.get("location") or "",
+             "jd": True, "redo": True}
+            for t in watch_t if isinstance(t, dict) and isinstance(t.get("job_id"), int) and _ext_id(t.get("url"))]
+    watch_t = [t for t in watch_t if not (isinstance(t, dict) and isinstance(t.get("job_id"), int))]
+    if redo:
+        emit(lane, "step", "Trying again: %d Easy Apply form%s that stopped on the old application email (%s)"
+             % (len(redo), "" if len(redo) == 1 else "s", ", ".join(_short_name(t["company"]) for t in redo[:5])), "info",
+             {"job_ids": [t["job_id"] for t in redo]})
     extra = None
     if watch_t:
         extra = [{"ext_id": _ext_id(t.get("url")), "title": t.get("title") or "", "company": t.get("company") or "",
                   "location": t.get("location") or "", "url": t.get("url"), "region": t.get("region")}
                  for t in watch_t if isinstance(t, dict) and _ext_id(t.get("url"))]
-    emit(lane, "step", "Checking LinkedIn's public job list and JDs first (no AI) — only good new jobs go to the AI")
-    try:
-        res = liprefetch.collect(emit.conn(), run_id, lane, regions=cfg.get("_regions") or list(REGIONS),
-                                 lookback=cfg.get("lookback", "24h"), extra_cards=extra,
-                                 emit=lambda m: emit(lane, "warning", m, "warn"))
-    except Exception as e:
-        emit(lane, "warning", "Pre-screen failed (%s: %s) — the AI will search itself" % (type(e).__name__, e), "warn")
-        res = None
+    if redo and not extra:
+        res = {"targets": [], "reasons": {}, "counts": {k: 0 for k in ("cards", "not_salesforce", "seen", "screened_out",
+                                                                     "closed", "saved", "retry")}}
+    else:
+        emit(lane, "step", "Checking LinkedIn's public job list and JDs first (no AI) — only good new jobs go to the AI")
+        try:
+            res = liprefetch.collect(emit.conn(), run_id, lane, regions=cfg.get("_regions") or list(REGIONS),
+                                     lookback=cfg.get("lookback", "24h"), extra_cards=extra,
+                                     emit=lambda m: emit(lane, "warning", m, "warn"))
+        except Exception as e:
+            emit(lane, "warning", "Pre-screen failed (%s: %s) — the AI will search itself" % (type(e).__name__, e), "warn")
+            res = None
+    if res is None and redo:
+        res = {"targets": [], "reasons": {}, "counts": {k: 0 for k in ("cards", "not_salesforce", "seen", "screened_out",
+                                                                     "closed", "saved", "retry")}}
     if res is None:
         emit(lane, "step", "LinkedIn's public list is not reachable right now — the AI searches LinkedIn itself this time")
         return _run_ai_lane(engine, lane, run_id, cfg, emit, stop, db_path, results, started=True, t0=t0)
     c, why = res["counts"], res.get("reasons") or {}
     top = ", ".join("%d %s" % (n, k) for k, n in sorted(why.items(), key=lambda x: -x[1])[:4])
-    emit(lane, "step", "Pre-screen: %d Salesforce jobs, %d already handled earlier, %d skipped by rules%s, %d new for the AI%s"
-         % (c["cards"] - c["not_salesforce"], c["seen"], c["screened_out"] + c["closed"], (" (%s)" % top) if top else "",
-            c["saved"], (" + %d retries" % c["retry"]) if c.get("retry") else ""),
-         "success" if res["targets"] else "info", {"counts": c, "reasons": why})
-    targets = res["targets"]
+    if extra or not redo:
+        emit(lane, "step", "Pre-screen: %d Salesforce jobs, %d already handled earlier, %d skipped by rules%s, %d new for the AI%s"
+             % (c["cards"] - c["not_salesforce"], c["seen"], c["screened_out"] + c["closed"], (" (%s)" % top) if top else "",
+                c["saved"], (" + %d retries" % c["retry"]) if c.get("retry") else ""),
+             "success" if res["targets"] else "info", {"counts": c, "reasons": why})
+    done_ids = {t["job_id"] for t in res["targets"] if isinstance(t.get("job_id"), int)}
+    targets = [t for t in redo if t["job_id"] not in done_ids] + res["targets"]
     if not targets or stop.is_set():
         status = "stopped" if stop.is_set() else "done"
         data = {"status": status, "counts": _lane_counts(emit.conn(), run_id, lane), "elapsed_s": round(time.time() - t0, 1),

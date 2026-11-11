@@ -1341,7 +1341,7 @@
     if (v === 'agencies') { if (S.agencies) renderAgencies(); loadAgencies(!!S.agencies); }
     if (v === 'board') { renderBoard(); loadBoard(!!S.board); }
   }
-  const APP_BUILD = '2026-11-11.1';   // must match jh/__init__.py BUILD
+  const APP_BUILD = '2026-11-11.2';   // must match jh/__init__.py BUILD
   async function checkBuild() {
     let b = null;
     try { const r = await fetch('/api/version', { cache: 'no-store' }); if (r.ok) b = (await r.json()).build; } catch (e) { return; }

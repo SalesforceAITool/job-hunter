@@ -49,6 +49,8 @@ CREATE TABLE IF NOT EXISTS profile_lookups (slug TEXT PRIMARY KEY, url TEXT, fou
 CREATE TABLE IF NOT EXISTS watch_seen (ext_id TEXT PRIMARY KEY, title TEXT, company TEXT, location TEXT, region TEXT,
   url TEXT, listed TEXT, status TEXT, reason TEXT, run_id INTEGER, first_seen TEXT, updated_at TEXT);
 CREATE INDEX IF NOT EXISTS ix_watch_status ON watch_seen(status);
+CREATE TABLE IF NOT EXISTS post_seen (post_id TEXT PRIMARY KEY, url TEXT, run_id INTEGER, status TEXT DEFAULT 'pending',
+  first_seen TEXT, updated_at TEXT);
 CREATE TABLE IF NOT EXISTS agencies (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, norm TEXT UNIQUE,
   priority TEXT, kind TEXT, region TEXT, website TEXT, linkedin TEXT, source TEXT, known_contacts TEXT, known_emails TEXT,
   status TEXT DEFAULT 'new', notes TEXT, job_id INTEGER, touches INTEGER DEFAULT 0, last_touch TEXT, next_touch TEXT,

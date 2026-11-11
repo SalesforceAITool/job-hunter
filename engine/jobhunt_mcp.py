@@ -109,6 +109,12 @@ TOOLS = [
         }, "required": ["source", "items"]},
     },
     {
+        "name": "new_posts",
+        "description": "LinkedIn posts lane: call once per search page, right after listing the posts' links and BEFORE get_page_text, with every post link on the page. Returns new (posts never read before: read only these) and seen (already read in an earlier run, hiring or not: never read them again). new empty -> skip this search page without reading it.",
+        "inputSchema": {"type": "object", "properties": {
+            "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]},
+    },
+    {
         "name": "filter_new_profiles",
         "description": "Before opening LinkedIn profiles for SalesQL: pass their URLs; returns the ones never looked up before (new). Skip the seen ones (already revealed or already tried).",
         "inputSchema": {"type": "object", "properties": {
@@ -500,6 +506,17 @@ def call_tool(ctx, name, args):
                    % (len(items), len(work), len(res["seen"]), sum(dropped.values()),
                       (" (%s)" % ", ".join("%d %s" % (n, k) for k, n in dropped.items())) if dropped else ""))
         return {"work": work, "retry": res["retry"], "already_handled": len(res["seen"]), "skipped_by_rules": dropped}, False
+
+    if name == "new_posts":
+        import jh.seen as seen
+        urls = args.get("urls") or []
+        if not isinstance(urls, list):
+            return {"error": "urls must be a list"}, True
+        res = seen.filter_posts(conn, rid, urls)
+        a.log_step(conn, rid, lane, "%d posts on this page: %d new, %d already read earlier%s"
+                   % (len(urls), len(res["new"]), res["seen"],
+                      "" if res["new"] else " — page skipped (nothing new)"))
+        return res, False
 
     if name in ("filter_new_jobs", "filter_new_profiles", "record_profile_lookup"):
         import jh.seen as seen

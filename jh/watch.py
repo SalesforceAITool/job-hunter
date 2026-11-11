@@ -13,6 +13,7 @@ Nothing here clicks anything: it only decides WHEN to start runs.
 """
 import gzip
 import html as htmllib
+import json
 import logging
 import random
 import re
@@ -176,6 +177,41 @@ def queued(conn, limit=MAX_TARGETS) -> list:
         "SELECT * FROM watch_seen WHERE status='queued' ORDER BY first_seen, ext_id LIMIT ?", (limit,))]
 
 
+EMAIL_BLOCK = re.compile(r"^\s*email:\s*add\s+([^\s@]{1,64}@[^\s)(,;]{1,120})", re.I)
+REDO_DAYS = 7
+
+
+def email_blocked(conn, email, limit=MAX_TARGETS) -> list:
+    """Easy Apply forms that stopped only because LinkedIn did not offer the email the app asked for (fixed 11 Nov:
+    the application email now comes from Settings). Each one goes back to the Easy Apply lane ONCE (app_meta
+    ea_redo_<portal id>), and only if Settings now holds a different email than the one it stopped on."""
+    since = (db.now() - timedelta(days=REDO_DAYS)).replace(microsecond=0).isoformat()
+    out = []
+    rows = conn.execute("SELECT p.id, p.job_id, p.apply_url, p.questions_json, j.company, j.role, j.location, j.url"
+                        " FROM portal_apps p JOIN jobs j ON j.id=p.job_id WHERE p.ats='linkedin_easy_apply'"
+                        " AND p.status='needs_input' AND COALESCE(p.ready,0)=0 AND p.approved_at IS NULL"
+                        " AND p.updated_at>=? ORDER BY p.id", (since,)).fetchall()
+    for r in rows:
+        try:
+            qs = json.loads(r["questions_json"] or "[]")
+        except ValueError:
+            continue
+        stuck = [m.group(1).lower().rstrip(".") for q in (qs if isinstance(qs, list) else []) if isinstance(q, str)
+                 for m in [EMAIL_BLOCK.search(q)] if m]
+        if not stuck or (email or "").strip().lower() in stuck:
+            continue
+        if conn.execute("SELECT 1 FROM app_meta WHERE k=?", ("ea_redo_%d" % r["id"],)).fetchone():
+            continue
+        ext = runner._ext_id(r["apply_url"]) or runner._ext_id(r["url"])
+        if not ext:
+            continue
+        out.append({"job_id": r["job_id"], "portal_id": r["id"], "company": r["company"], "role": r["role"],
+                    "location": r["location"], "url": "https://www.linkedin.com/jobs/view/%s/" % ext})
+        if len(out) >= limit:
+            break
+    return out
+
+
 def recent(conn, limit=12) -> list:
     return [dict(r) for r in conn.execute(
         "SELECT ext_id, title, company, location, region, url, status, reason, first_seen, run_id FROM watch_seen"
@@ -204,8 +240,10 @@ def over_budget(conn) -> bool:
 class Watcher:
     """One per server. `tick()` is the whole brain; the thread just calls it every TICK_S seconds."""
 
-    def __init__(self, db_path=None, fetcher=None, start_run=None, sleep=time.sleep, jobboard=None):
+    def __init__(self, db_path=None, fetcher=None, start_run=None, sleep=time.sleep, jobboard=None, probe_fetch=None):
         self.db_path = db_path
+        # Fast Apply's no-AI check of the public Easy Apply list (allowed in account-safety mode: logged-out pages)
+        self.probe_fetch = probe_fetch
         injected = fetcher is not None          # tests inject a fetcher; the real app passes none
         self.injected = injected
         if fetcher is None:
@@ -225,7 +263,9 @@ class Watcher:
                       "next_li_fast": time.time() + 120,
                       # Akshay, 10 Nov (token saving): after an AI cycle FINISHES, wait li_fast.gap_after_min before
                       # the next AI run (Fast Apply / Job board); replies + approvals are free and not held back
-                      "next_ai": 0.0, "ai_active": False}
+                      "next_ai": 0.0, "ai_active": False,
+                      # Akshay, 11 Nov (token saving): last no-AI check of LinkedIn's public Easy Apply list
+                      "probe": None, "probe_ok_at": 0.0, "quiet_said": False}
 
     # ---- config
     def cfg(self) -> dict:
@@ -302,6 +342,7 @@ class Watcher:
         out["li_fast"] = bool(lf.get("on"))
         out["li_fast_every_min"] = int(lf.get("every_min") or 30)
         out["next_li_fast_in_s"] = max(0, int(st.get("next_li_fast", 0) - now)) if lf.get("on") else None
+        out["li_probe"] = st.get("probe")          # last no-AI check of LinkedIn's public Easy Apply list
         if out["linkedin_safe"]:
             on = False                         # no LinkedIn polling in safe mode
             out.update(next_poll_in_s=None, next_posts_in_s=None)
@@ -533,6 +574,11 @@ class Watcher:
         regions = (config.load().get("autopilot") or {}).get("regions") or ["india", "world"]
         lanes = [x for x in ("easy_apply", "posts", "linkedin_jobs")
                  if x in [str(v) for v in (lf.get("lanes") if isinstance(lf.get("lanes"), list) else [])]] or ["easy_apply"]
+        targets = []
+        if "easy_apply" in lanes:
+            targets, lanes = self.easy_apply_targets(conn, lf, regions, lanes, now)
+            if not lanes:
+                return None                                     # nothing new anywhere: no AI run, no tokens
         if not self.state.get("no_jobboard") and not config.load().get("focus_linkedin"):
             try:
                 from . import jobboard
@@ -540,7 +586,80 @@ class Watcher:
                     lanes.append("board_apply")                 # Job board picks ride along in the same cycle
             except Exception as e:
                 log.warning("li_fast: job board check failed: %s", e)
-        return self._start(conn, "li_fast", lanes=lanes, regions=regions, quick="posts" in lanes)
+        return self._start(conn, "li_fast", lanes=lanes, regions=regions, quick="posts" in lanes, targets=targets)
+
+    def easy_apply_targets(self, conn, lf, regions, lanes, now):
+        """Akshay, 11 Nov: only NEW work goes to the AI. -> (targets, lanes).
+        1. Forms that stopped only on the old application email go back once (first).
+        2. LinkedIn's public Easy Apply list is read without AI (one request per region); every job ever seen is
+           remembered in watch_seen, so only never-seen Salesforce jobs are queued. Nothing new -> Easy Apply is
+           dropped from this cycle (no AI run). The list unreadable -> the AI searches LinkedIn itself, as before."""
+        from . import engine
+        try:
+            redo = email_blocked(conn, engine.profile_email())
+        except Exception as e:
+            log.warning("li_fast: email-blocked check failed: %s", e)
+            redo = []
+        cap = max(1, min(MAX_TARGETS, int(lf.get("per_run") or MAX_TARGETS)))
+        found = None
+        if lf.get("probe", True) not in (False, "false", "0", 0):
+            found = self.li_probe(conn, regions, lf, now)
+        if found is None:
+            if redo:          # this cycle: the forms to finish; the next cycle searches again
+                return redo[:cap], lanes
+            return [], lanes
+        cutoff = (db.now() - timedelta(days=2)).replace(microsecond=0).isoformat()
+        fresh = [q for q in queued(conn, limit=50) if (q.get("first_seen") or "") >= cutoff][:max(0, cap - len(redo))]
+        targets = redo[:cap] + fresh
+        if not targets:
+            lanes = [x for x in lanes if x != "easy_apply"]
+            if not self.state.get("quiet_said"):
+                self.state["quiet_said"] = True
+                events.emit(conn, None, "watch", "step", "LinkedIn checked without AI: no new Easy Apply jobs since the"
+                            " last run — the AI waits for something new%s" % (" (posts still checked)" if lanes else ""),
+                            "info", {"probe": self.state.get("probe")})
+        else:
+            self.state["quiet_said"] = False
+        return targets, lanes
+
+    def li_probe(self, conn, regions, lf, now):
+        """Read LinkedIn's PUBLIC Easy Apply list (logged out, no AI) for each region and remember every card.
+        -> newly queued cards, or None when no region could be read (LinkedIn pausing us, no connection)."""
+        fetch = self.probe_fetch
+        if fetch is None:
+            from . import ligate
+            if not ligate.probe_on():
+                return None
+            fetch = lambda u: ligate.get(u, public_ok=True)
+        # first check after a long break (laptop was off): look back a whole day; then just past the last check
+        gap = now - float(self.state.get("probe_ok_at") or 0)
+        window = 86400 if gap > 6 * 3600 else max(3600, int(gap) + 1800)
+        new, ok, errs = [], 0, []
+        for i, region in enumerate([r for r in regions if r in GEO] or ["india", "world"]):
+            if i:
+                self.sleep(random.uniform(2.0, 4.0))
+            try:
+                st, text = fetch(search_url(region, window))
+            except Exception as e:
+                st, text = 0, "%s: %s" % (type(e).__name__, e)
+            if st == 200:
+                ok += 1
+                new += record_cards(conn, region, parse_guest_html(text))
+            else:
+                errs.append("%s: HTTP %s" % (region, st or (text or "")[:60]))
+        self.state["probe"] = {"at": db.now_iso(), "ok": bool(ok), "new": len(new), "window_h": round(window / 3600, 1),
+                               "errors": errs[:3]}
+        if not ok:
+            log.info("li_fast probe: public list not readable (%s)", "; ".join(errs))
+            return None
+        self.state["probe_ok_at"] = now
+        if new:
+            names = ", ".join("%s (%s)" % (c["company"] or "?", c["title"][:40]) for c in new[:3])
+            events.emit(conn, None, "watch", "watch_found", "New Salesforce Easy Apply job%s: %s%s"
+                        % ("" if len(new) == 1 else "s", names, " +%d more" % (len(new) - 3) if len(new) > 3 else ""),
+                        "success", {"count": len(new), "jobs": [{k: c.get(k) for k in ("title", "company", "url", "region")}
+                                                                 for c in new[:10]]})
+        return new
 
     def _start(self, conn, kind, lanes, targets=None, quick=False, regions=None):
         w = self.cfg()
@@ -557,8 +676,16 @@ class Watcher:
             elif kind == "board_apply":
                 rid = self.start_run("jobboard", db_path=self.db_path, lanes=lanes)
             elif kind == "li_fast":
+                tg = [{k: t.get(k) for k in ("job_id", "title", "role", "company", "location", "url", "region")
+                       if t.get(k) is not None} for t in (targets or [])]
                 rid = self.start_run("li_fast", db_path=self.db_path, lanes=lanes, regions=regions, fast=True,
-                                     **({"quick": True} if quick else {}))
+                                     **({"quick": True} if quick else {}), **({"targets": tg} if tg else {}))
+                now_s = db.now_iso()
+                conn.executemany("UPDATE watch_seen SET status='sent', run_id=?, updated_at=? WHERE ext_id=?",
+                                 [(rid, now_s, t["ext_id"]) for t in (targets or []) if t.get("ext_id")])
+                conn.executemany("INSERT OR REPLACE INTO app_meta (k, v) VALUES (?, ?)",
+                                 [("ea_redo_%d" % t["portal_id"], str(rid)) for t in (targets or [])
+                                  if isinstance(t.get("portal_id"), int)])
             elif kind in ("followups", "linkedin_jobs"):
                 rid = self.start_run("auto", db_path=self.db_path, lanes=lanes, regions=regions)
             else:

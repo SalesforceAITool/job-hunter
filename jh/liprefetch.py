@@ -95,6 +95,10 @@ def collect(conn, run_id, lane, regions=("us", "india", "world"), lookback="24h"
         if ligate.safe_mode() and not extra_cards:
             return None                 # account safety: no LinkedIn public-page fetching; the AI searches as a person would
         fetcher = ligate.get            # shared LinkedIn spacing + rate-limit pause
+        if extra_cards and ligate.probe_on():
+            # Fast Apply cards from the public list: read their public JD pages too, so the skip rules
+            # (architect, > 7 years, onsite) drop jobs before the AI ever opens them
+            fetcher = lambda u, timeout=20.0: ligate.get(u, timeout, public_ok=True)
     get = fetcher
     cap = cap or CAP.get(lane, 16)
     say = emit or (lambda *a, **k: None)

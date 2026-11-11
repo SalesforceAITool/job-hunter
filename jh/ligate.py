@@ -76,11 +76,23 @@ def _ok():
         _meta("li_strikes", 0)
 
 
-def get(url, timeout=20.0, fetch=None):
-    """(status, text) like watch.fetch, through the gate. While paused: (429, "paused") without a request."""
+def probe_on() -> bool:
+    """LinkedIn Fast Apply's no-AI check of the PUBLIC Easy Apply list (config li_fast.probe, default on). It reads
+    logged-out pages only, never his account, so it is allowed even with the account-safety setting on."""
+    try:
+        from . import config
+        lf = config.load().get("li_fast") or {}
+        return bool(lf.get("on")) and lf.get("probe", True) not in (False, "false", "0", 0, "off", "no")
+    except Exception:
+        return False
+
+
+def get(url, timeout=20.0, fetch=None, public_ok=False):
+    """(status, text) like watch.fetch, through the gate. While paused: (429, "paused") without a request.
+    public_ok: the Fast Apply check (probe_on) may read public pages even with the account-safety setting on."""
     if fetch is None and os.environ.get("JOBHUNTER_OFFLINE") == "1":
         return 0, "offline mode"           # tests / QA: never touch the network
-    if fetch is None and safe_mode():
+    if fetch is None and safe_mode() and not (public_ok and probe_on()):
         return 0, "LinkedIn public pages are off (account safety setting)"
     if cooling():
         return 429, "LinkedIn paused after a rate limit (until %s)" % time.strftime("%H:%M", time.localtime(cooling_until()))
