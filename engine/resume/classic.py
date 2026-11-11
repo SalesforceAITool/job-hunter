@@ -23,12 +23,13 @@ from reportlab.platypus import KeepTogether, Paragraph, SimpleDocTemplate, Space
 import orig_content as O
 
 NAME = "Akshay Kumar Verma"
+EMAIL = os.environ.get("JH_PROFILE_EMAIL") or "akshay.verma0031@gmail.com"   # set by the app from Settings
 CONTACT = [
     ("Phone", "+91 7566442162"),
     ("Education", "BE(IT) 2017"),
     ("Linkedin", "<a href='https://www.linkedin.com/in/akshay-kumar-18565910a/' color='#0563C1'><u>https://www.linkedin.com/in/akshay-kumar-18565910a/</u></a>"),
     ("TrailheadId", "<a href='https://www.salesforce.com/trailblazer/akumar2783' color='#0563C1'><u>https://www.salesforce.com/trailblazer/akumar2783</u></a>"),
-    ("Email", "<a href='mailto:akshay.verma0031@gmail.com' color='#0563C1'><u>akshay.verma0031@gmail.com</u></a>"),
+    ("Email", "<a href='mailto:" + EMAIL + "' color='#0563C1'><u>" + EMAIL + "</u></a>"),
 ]
 # Skills Summary bullets that are bold in the original (matched by their first words)
 BOLD_PREFIXES = ("Hands-on Agentforce", "Experience in integrating SFDC", "Experience in JavaScript", "Experienced in Salesforce Lightning",

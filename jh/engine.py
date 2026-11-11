@@ -240,6 +240,22 @@ def form_helper_js():
     return "\n".join(lines)
 
 
+def profile_email(cfg=None):
+    """The application email from Settings (profile.email). Akshay, 8 Nov: akshay.verma2784@gmail.com from now on."""
+    try:
+        from . import config as _cfgmod
+        cfg = cfg or _cfgmod.load()
+        return str((cfg.get("profile") or {}).get("email") or "").strip() or "akshay.verma0031@gmail.com"
+    except Exception:
+        return "akshay.verma0031@gmail.com"
+
+
+def use_profile_email(text, cfg=None):
+    """The prompts were written with akshay.verma0031@gmail.com; swap in the email set in Settings."""
+    email = profile_email(cfg)
+    return text.replace("akshay.verma0031@gmail.com", email) if email != "akshay.verma0031@gmail.com" else text
+
+
 def li_fast_window():
     """f_TPR value for Fast Apply: covers the time since the previous Fast Apply run (li_fast.every_min, at least one
     hour), so a 2-hourly schedule does not skip jobs posted 1-2 hours ago (Akshay, 10 Nov)."""
@@ -396,6 +412,8 @@ def compose_system_prompt(lane, prompt_path, run_id=None, lookback="24h", region
     text = apply_lookback("\n\n---\n\n".join(parts), lookback)
     if other:
         text = profiles.personalize(text, prof_cfg)
+    else:
+        text = use_profile_email(text)
     if lane == "easy_apply" and li_fast:
         win = li_fast_window()
         text = text.replace("f_TPR=r86400", "f_TPR=" + win).replace("f_TPR=r604800", "f_TPR=" + win)

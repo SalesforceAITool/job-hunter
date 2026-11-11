@@ -3,6 +3,7 @@
     python classic_docx.py out.docx
 """
 import html as htmllib
+import os
 import re
 import sys
 
@@ -123,7 +124,7 @@ def build(out, cfg=None):
     for label, val in [("Phone", "+91 7566442162"), ("Education", "BE(IT) 2017"),
                        ("Linkedin", "https://www.linkedin.com/in/akshay-kumar-18565910a/"),
                        ("TrailheadId", "https://www.salesforce.com/trailblazer/akumar2783"),
-                       ("Email", "akshay.verma0031@gmail.com")]:
+                       ("Email", os.environ.get("JH_PROFILE_EMAIL") or "akshay.verma0031@gmail.com")]:
         p = doc.add_paragraph(); p.paragraph_format.space_after = Pt(0)
         _font(p.add_run(label), CAL, 11, bold=True)
         _font(p.add_run(" :  "), CAL, 11)

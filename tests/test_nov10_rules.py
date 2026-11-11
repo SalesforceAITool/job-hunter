@@ -96,6 +96,14 @@ class CycleTests(TempData, unittest.TestCase):
         finally:
             runner.is_running = orig
 
+    def test_application_email_comes_from_settings(self):
+        cfg = config.load(); cfg["profile"]["email"] = "akshay.verma2784@gmail.com"; config.save(cfg)
+        t = engine.compose_system_prompt("easy_apply", str(engine.PROMPTS_DIR / "easy_apply.md"), 1)
+        self.assertIn("akshay.verma2784@gmail.com", t)
+        self.assertNotIn("akshay.verma0031@gmail.com", t)
+        t = engine.compose_system_prompt("submit", str(engine.PROMPTS_DIR / "submit.md"), 1)
+        self.assertNotIn("akshay.verma0031@gmail.com", t)
+
     def test_bad_lanes_are_cleaned(self):
         cfg = config.apply_update(config.load(), {"li_fast": {"lanes": ["posts", "rm -rf", "board_apply"]}})
         self.assertEqual(cfg["li_fast"]["lanes"], ["posts"])

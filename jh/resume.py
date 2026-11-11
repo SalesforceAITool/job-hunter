@@ -119,6 +119,11 @@ def build_pdf(resume: dict, out_path, timeout=120) -> str:
     try:
         # utf-8 both ways: Windows defaults to cp1252, and a strict decode of the child's output would raise
         env = dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONUTF8="1")
+        try:
+            from .engine import profile_email
+            env["JH_PROFILE_EMAIL"] = profile_email()        # email printed on the resume = application email
+        except Exception:
+            pass
         proc = subprocess.run([python_for_subprocess(), str(script), str(cfg_path)], cwd=str(script.parent),
                               capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=timeout,
                               stdin=subprocess.DEVNULL, env=env, creationflags=no_window_flags())

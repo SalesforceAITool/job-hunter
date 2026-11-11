@@ -2,7 +2,8 @@
 Written plain and specific so it reads like a person wrote it. Per-job tweaks come from a JSON config:
   headline, summary, skills (list of [label, text]), project_order (list of project keys), out
 """
-import json, sys
+import json, os, sys
+EMAIL = os.environ.get("JH_PROFILE_EMAIL") or "akshay.verma0031@gmail.com"   # set by the app from Settings
 from reportlab import rl_config
 rl_config.useA85 = 0
 rl_config.invariant = 1
@@ -152,7 +153,7 @@ ORDER = ["nissan", "asda", "scv", "amkor", "siemens", "bcbsm", "dubai", "emaar",
 
 s = [Paragraph("Akshay Kumar Verma", name_s),
      Paragraph(cfg.get("headline", HEADLINE), head_s), Spacer(1, 2),
-     Paragraph("<a href='mailto:akshay.verma0031@gmail.com' color='#0b5cad'>akshay.verma0031@gmail.com</a> &nbsp;|&nbsp; +91 75664 42162 &nbsp;|&nbsp; "
+     Paragraph("<a href='mailto:" + EMAIL + "' color='#0b5cad'>" + EMAIL + "</a> &nbsp;|&nbsp; +91 75664 42162 &nbsp;|&nbsp; "
                "<a href='https://www.linkedin.com/in/akshay-kumar-18565910a/' color='#0b5cad'>LinkedIn</a> &nbsp;|&nbsp; "
                "<a href='https://www.salesforce.com/trailblazer/akumar2783' color='#0b5cad'>Trailhead</a> &nbsp;|&nbsp; Remote from India, US hours", contact_s)]
 _cs = ParagraphStyle("cs", parent=body, fontSize=9.8, leading=13, textColor=colors.HexColor("#0b2e59"))
