@@ -1,5 +1,7 @@
 # Salesforce Health Cloud: Experience and Project Details
 
+See also: [LWC project experience](lwc-projects.md).
+
 Interview and resume reference. Section 4 covers the project actually delivered (source: `engine/resume/orig_content.py`).
 Sections 1–3 are Health Cloud product knowledge; talk about them as knowledge, not as things built on the project.
 
