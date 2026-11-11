@@ -1341,7 +1341,7 @@
     if (v === 'agencies') { if (S.agencies) renderAgencies(); loadAgencies(!!S.agencies); }
     if (v === 'board') { renderBoard(); loadBoard(!!S.board); }
   }
-  const APP_BUILD = '2026-11-11.2';   // must match jh/__init__.py BUILD
+  const APP_BUILD = '2026-11-11.3';   // must match jh/__init__.py BUILD
   async function checkBuild() {
     let b = null;
     try { const r = await fetch('/api/version', { cache: 'no-store' }); if (r.ok) b = (await r.json()).build; } catch (e) { return; }
@@ -2520,6 +2520,7 @@
           h('input', { type: 'number', id: 'f-max_emails', min: '0', max: '500', step: '1', value: val('max_emails') != null ? String(val('max_emails')) : '25' }),
           h('div', { class: 'help' }, 'The run stops sending new applications after this many. Nudges are not counted.')),
       ]),
+      reportFieldset(cfg),
       fs('Runs', null, [
         toggleRow('f-auto_run', 'Start a run when Job Hunter opens', 'Double-clicking the Desktop icon opens the dashboard and starts right away.', val('auto_run') == null ? true : !!val('auto_run')),
         h('div', { class: 'field' }, h('label', { for: 'f-lookback' }, 'Job age'),
@@ -2528,7 +2529,7 @@
             h('option', { value: 'week', selected: val('lookback') === 'week' ? true : null }, 'Past week (catch-up)')),
           h('div', { class: 'help' }, 'How old a job or post can be. Use Past week after a break, then switch back to 24 hours.')),
         toggleRow('f-easy_apply', 'LinkedIn Easy Apply prefill', 'Fills Easy Apply forms up to the Review step.', val('easy_apply') == null ? true : !!val('easy_apply')),
-        toggleRow('f-li_fast', 'Apply to new LinkedIn jobs by itself', 'While the app is open (8 AM to midnight), every 30 min your own Chrome checks LinkedIn Easy Apply + Remote jobs from the past hour and applies at once — max 5 per check, 30 a day. Off: LinkedIn only when you click Run.', val('li_fast') == null ? true : !!val('li_fast')),
+        toggleRow('f-li_fast', 'Apply to new LinkedIn jobs by itself', 'Every 10 minutes your own Chrome checks LinkedIn for new remote Easy Apply jobs and hiring posts and applies at once. Jobs and posts already handled are never opened again. Off: LinkedIn only when you click Run.', val('li_fast') == null ? true : !!val('li_fast')),
         toggleRow('f-auto_submit', 'Submit ready applications by itself', 'Every fully filled form (Easy Apply and job-portal forms) is submitted without your click. Off: you approve each batch with Submit selected.', val('auto_submit') == null ? true : !!val('auto_submit')),
         h('div', { class: 'field' }, h('label', { for: 'f-chrome_device_id' }, 'Chrome for LinkedIn (locked to this laptop)'),
           h('input', { type: 'text', id: 'f-chrome_device_id', value: str(val('chrome_device_id')), placeholder: 'Picked automatically on the next run', spellcheck: 'false' }),
@@ -2608,6 +2609,13 @@
     if (v('apollo') && v('apollo').value.trim()) ef.apollo_api_key = v('apollo').value.trim();
     if (v('finder_cap')) ef.daily_cap = Math.max(0, Math.min(500, Math.round(num(v('finder_cap').value, 25))));
     out.email_finder = ef;
+    if (v('report_on') || v('report_to') || v('report_hour')) {
+      const dr = Object.assign({}, out.daily_report || {});
+      if (v('report_on')) dr.on = v('report_on').checked;
+      if (v('report_to')) dr.to = v('report_to').value.trim();
+      if (v('report_hour')) dr.hour = Math.max(0, Math.min(23, Math.round(num(v('report_hour').value, 23))));
+      out.daily_report = dr;
+    }
     return out;
   }
   async function saveSettings() {
@@ -2615,6 +2623,8 @@
     const st = $('#settings-status');
     const gm = $('#f-gmail');
     if (gm && gm.value.trim() && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(gm.value.trim())) { st.textContent = 'That Gmail address doesn’t look right.'; st.style.color = 'var(--bad)'; gm.focus(); return; }
+    const rt = $('#f-report_to');
+    if (rt && rt.value.trim() && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(rt.value.trim())) { st.textContent = 'The daily report address doesn’t look right.'; st.style.color = 'var(--bad)'; rt.focus(); return; }
     btn.disabled = true; st.style.color = ''; st.textContent = 'Saving…';
     try {
       const payload = collectSettings();
@@ -2626,6 +2636,40 @@
       loadEnv();
     } catch (e) { st.textContent = 'Not saved: ' + (e.message || 'error'); st.style.color = 'var(--bad)'; }
     finally { btn.disabled = false; }
+  }
+  // Daily report email (Akshay, 11 Nov): applications submitted + recruiter emails sent, once a day
+  function reportFieldset(cfg) {
+    const dr = get(cfg, 'daily_report') || {};
+    const hour = dr.hour != null ? Number(dr.hour) : 23;
+    const label = x => (x % 12 || 12) + ':00 ' + (x < 12 ? 'AM' : 'PM');
+    const res = h('span', { class: 'result', id: 'report-result', 'aria-live': 'polite' });
+    const btn = h('button', { class: 'btn btn-sm', type: 'button', id: 'btn-report-now' }, 'Send report now');
+    btn.onclick = () => sendReportNow(btn, res);
+    return fs('Daily report', 'One email a day: Easy Apply and portal applications submitted, recruiter emails sent (with each company, address and link), follow-ups, replies and forms waiting for you.', [
+      toggleRow('f-report_on', 'Email me a daily report', 'Covers everything since the previous report, so nothing is counted twice or missed.', dr.on == null ? true : !!dr.on),
+      h('div', { class: 'field' }, h('label', { for: 'f-report_to' }, 'Send to'),
+        h('input', { type: 'email', id: 'f-report_to', value: str(dr.to), placeholder: str(val2(cfg, 'gmail')) || 'you@gmail.com', spellcheck: 'false' }),
+        h('div', { class: 'help' }, 'Empty = the Gmail address above.')),
+      h('div', { class: 'field' }, h('label', { for: 'f-report_hour' }, 'Time (IST)'),
+        h('select', { id: 'f-report_hour' }, Array.from({ length: 24 }, (_, x) => h('option', { value: String(x), selected: x === hour ? true : null }, label(x))))),
+      h('div', { class: 'field-row' }, btn, res),
+    ]);
+  }
+  function val2(cfg, f) { const p = FIELDS[f].paths.find(x => has(cfg, x)); return get(cfg, p || FIELDS[f].def); }
+  async function sendReportNow(btn, res) {
+    btn.disabled = true;
+    res.className = 'result'; res.replaceChildren(h('span', { class: 'spinner' }), 'Sending today’s report…');
+    const body = {};
+    const to = $('#f-report_to');
+    if (to && to.value.trim()) body.daily_report = { to: to.value.trim() };
+    try {
+      const d = await api('/api/report/send', { method: 'POST', body: body, label: 'Daily report', quiet: true, timeout: 60000 });
+      if (d && d.ok) { res.className = 'result ok'; res.textContent = 'Sent to ' + str(d.to) + ' — ' + str(d.subject); }
+      else { res.className = 'result bad'; res.textContent = 'Not sent: ' + (str(d && d.error) || 'unknown error'); }
+    } catch (e) {
+      res.className = 'result bad';
+      res.textContent = e.status === 404 ? 'Restart Job Hunter to use this button.' : 'Not sent: ' + (e.message || 'no response');
+    } finally { btn.disabled = false; }
   }
   async function testEmail(btn, res) {
     btn.disabled = true;

@@ -377,6 +377,19 @@ class Watcher:
                 self.tick()
             except Exception as e:   # never let the dispatcher die
                 log.exception("watch tick failed: %s", e)
+            try:
+                self.report_tick()
+            except Exception as e:
+                log.exception("daily report failed: %s", e)
+
+    def report_tick(self):
+        """Akshay, 11 Nov: the daily report email (jh/report.py) when it is due."""
+        from . import report
+        conn = db.connect(self.db_path)
+        try:
+            return report.tick(conn)
+        finally:
+            conn.close()
 
     # ---- the brain
     def ai_gap_s(self):

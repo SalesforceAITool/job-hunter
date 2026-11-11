@@ -386,6 +386,18 @@ class Handler(BaseHTTPRequestHandler):
         ok, err = mailer.test_login(cfg)
         self._json({"ok": ok, "error": err})
 
+    def report_now(self, qs):
+        """Settings → Daily report → 'Send report now' (today so far; the daily schedule is not moved)."""
+        from . import report
+        body = self._json_body()
+        cfg = config.apply_update(config.load(), body, from_api=True) if body else config.load()
+        conn = self._conn()
+        try:
+            res = report.send_now(conn, cfg)
+        finally:
+            conn.close()
+        self._json(res)
+
     def engine_test(self, qs):
         try:
             engine = runner._load_engine()
@@ -680,6 +692,7 @@ ROUTES = [
     ("POST", r"/api/stop", Handler.run_stop),
     ("POST", r"/api/settings", Handler.settings_post),
     ("POST", r"/api/settings/test-email", Handler.test_email),
+    ("POST", r"/api/report/send", Handler.report_now),
     ("POST", r"/api/engine-test", Handler.engine_test),
     ("POST", r"/api/portal/submit", Handler.portal_submit),
     ("POST", r"/api/portal/(\d+)", Handler.portal_update),

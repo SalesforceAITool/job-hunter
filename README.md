@@ -13,6 +13,9 @@ Job Hunter finds new remote Salesforce jobs on LinkedIn and applies to the ones 
    - Easy Apply forms that stopped only because of the old application email are tried again once.
 4. Each job is screened against [RULES.md](RULES.md) (no architect roles, at most 7 years asked), the form is filled with the tailored resume, and it is submitted automatically.
 5. If the laptop is off, the next cycle after it starts looks back over the whole day.
+6. Daily report email (11 PM IST, Settings → Daily report): Easy Apply and portal applications submitted end to end,
+   recruiter emails sent (company, address, post/job link), follow-ups, replies, forms waiting for an answer,
+   emails that did not go out, runs and AI spend, plus totals since the start.
 
 ## Files
 

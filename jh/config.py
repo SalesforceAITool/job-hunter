@@ -50,6 +50,9 @@ DEFAULTS = {
     # minutes, not after the next button click. Every AI lane stops for the day at budget.daily_usd.
     "autopilot": {"on": True, "followups_min": 15, "linkedin_jobs_min": 60, "regions": ["india", "world"]},
     "budget": {"daily_usd": 40},
+    # Akshay, 11 Nov: one email a day with what Job Hunter did (Easy Apply / portal applications submitted, recruiter
+    # emails sent, follow-ups, replies, forms waiting) at `hour` IST, to `to` (empty = the application Gmail)
+    "daily_report": {"on": True, "hour": 23, "to": ""},
     # LinkedIn account safety (Akshay, 22 Oct): no automatic LinkedIn traffic at all — no public-page fetching (watch
     # mode, pre-screen, Job board) and no LinkedIn runs started by Autopilot. LinkedIn lanes run only on his Run click.
     "linkedin_safe": True,
@@ -315,6 +318,15 @@ def apply_update(cfg: dict, incoming: dict, from_api: bool = False) -> dict:
     except (TypeError, ValueError, OverflowError):
         bd["daily_usd"] = DEFAULTS["budget"]["daily_usd"]
     out["budget"] = {"daily_usd": bd["daily_usd"]}
+    dr = _deep_merge(DEFAULTS["daily_report"], out.get("daily_report") if isinstance(out.get("daily_report"), dict) else {})
+    dr["on"] = _as_bool(dr.get("on", True))
+    try:
+        dr["hour"] = min(23, max(0, int(dr.get("hour"))))
+    except (TypeError, ValueError, OverflowError):
+        dr["hour"] = DEFAULTS["daily_report"]["hour"]
+    to = re.sub(r"\s+", "", str(dr.get("to") or ""))[:120]
+    dr["to"] = to if re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", to) else ""
+    out["daily_report"] = {k: dr[k] for k in DEFAULTS["daily_report"]}
     out["linkedin_safe"] = _as_bool(out.get("linkedin_safe", True))
     lf = _deep_merge(DEFAULTS["li_fast"], out.get("li_fast") if isinstance(out.get("li_fast"), dict) else {})
     lf["on"] = _as_bool(lf.get("on"))

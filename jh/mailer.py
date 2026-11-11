@@ -67,7 +67,8 @@ def _q(s) -> str:
     return '"%s"' % s
 
 
-def build_message(cfg, to, subject, body, attachment_path=None, in_reply_to=None, references=None) -> EmailMessage:
+def build_message(cfg, to, subject, body, attachment_path=None, in_reply_to=None, references=None,
+                  html=None) -> EmailMessage:
     em = _email_cfg(cfg)
     addr = em.get("address") or ""
     msg = EmailMessage()
@@ -83,17 +84,19 @@ def build_message(cfg, to, subject, body, attachment_path=None, in_reply_to=None
     elif references:
         msg["References"] = references
     msg.set_content(body or "")
+    if html:                                   # optional HTML version (the daily report); plain text stays first
+        msg.add_alternative(html, subtype="html")
     if attachment_path:
         data = Path(attachment_path).read_bytes()
         msg.add_attachment(data, maintype="application", subtype="pdf", filename=ATTACHMENT_NAME)
     return msg
 
 
-def send(cfg, to, subject, body, attachment_path=None, in_reply_to=None, references=None) -> str:
-    """Send one plain-text email; returns our Message-ID. Raises MailError."""
+def send(cfg, to, subject, body, attachment_path=None, in_reply_to=None, references=None, html=None) -> str:
+    """Send one plain-text email (optionally with an HTML version); returns our Message-ID. Raises MailError."""
     if not to or "@" not in to:
         raise MailError("invalid recipient %r" % to)
-    msg = build_message(cfg, to, subject, body, attachment_path, in_reply_to, references)
+    msg = build_message(cfg, to, subject, body, attachment_path, in_reply_to, references, html=html)
     if backend(cfg) == "file":
         out = config.sub_dir("outbox")
         safe = re.sub(r"[^A-Za-z0-9._-]+", "_", to)[:60]
