@@ -946,6 +946,9 @@ def _spawn(argv, env, cwd):
         **_popen_kwargs())
 
 
+RESULT_EXIT_GRACE_S = 30
+
+
 def _run_stream(argv, env, cwd, on_obj_line, stop=None, timeout_s=None, log_path=None, on_stderr=None):
     """Run a process, feed each stdout line to on_obj_line(line). Returns
     (returncode, reason, stderr_tail) where reason is None|'stopped'|'timeout'."""
@@ -959,10 +962,13 @@ def _run_stream(argv, env, cwd, on_obj_line, stop=None, timeout_s=None, log_path
         except Exception:
             logf = None
     lock = threading.Lock()
+    done_at = {"t": None}         # when the engine printed its final `result` line
 
     def read_out():
         try:
             for line in proc.stdout:
+                if done_at["t"] is None and '"type":"result"' in line.replace(" ", ""):
+                    done_at["t"] = time.monotonic()
                 if logf:
                     with lock:
                         try:
@@ -1007,6 +1013,11 @@ def _run_stream(argv, env, cwd, on_obj_line, stop=None, timeout_s=None, log_path
             break
         if timeout_s and time.monotonic() - start > timeout_s:
             reason = "timeout"
+            kill_tree(proc)
+            break
+        if done_at["t"] is not None and time.monotonic() - done_at["t"] > RESULT_EXIT_GRACE_S:
+            # 16 Nov, run 221: the engine printed its result at 15:03 but its process never exited, so the cycle
+            # sat until the 60-min timeout (2 h 20 min without applying). The work is done - end it.
             kill_tree(proc)
             break
         time.sleep(0.2)
