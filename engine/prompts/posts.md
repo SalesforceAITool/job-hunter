@@ -31,7 +31,15 @@ btns.forEach(b=>b.click()); await new Promise(r=>setTimeout(r,1500));
 }).filter(x=>x.poster)
 ```
    If it returns nothing, use `find` "author name link of the post about <role>" for the posts that need SalesQL.
-   **Then call `new_posts` with every `post` link from that list** (Akshay, 11 Nov — saves tokens: posts read in an earlier run, hiring or not, are never read again). If `new` is empty → this page has nothing new: do NOT call `get_page_text`, go straight to the next search URL. Otherwise `get_page_text` and split the text into posts (each starts with "Feed post"), and work ONLY on the posts in `new` (match them by the first words / poster from the list). If the page text is a login wall or security check → stop this lane (common rules).
+   **Then run this with `javascript_tool` and call `new_posts` with the keys it returns** (Akshay, 11/16 Nov — saves tokens: posts read in an earlier run, hiring or not, are never read again; LinkedIn's page has no post ids any more, so each post is keyed by its poster and first lines):
+```js
+const t=(document.querySelector('main')||document.body).innerText;
+t.split(/\bFeed post(?: number \d+)?\b/).slice(1).map(b=>{const L=b.split('\n').map(s=>s.trim()).filter(Boolean);
+  const body=L.slice(1).filter(s=>s.length>=40&&!/^\d+\s*(?:reactions?|comments?|reposts?)/i.test(s)).slice(0,2).join(' ');
+  return ((L[0]||'')+' | '+(body||L.slice(1).filter(s=>s.length>=15&&!/^\d+[smhdw]\b|•/.test(s)).slice(0,3).join(' '))).slice(0,300);
+}).filter(k=>k.length>15)
+```
+   Pass the keys exactly as returned (and any `post` links from the list above). If `new` is empty → this page has nothing new: do NOT call `get_page_text`, go straight to the next search URL. If the JS returns no keys, carry on as usual. Otherwise `get_page_text` and split the text into posts (each starts with "Feed post"), and work ONLY on the posts in `new` (match them by the poster and first words). If the page text is a login wall or security check → stop this lane (common rules).
 3. Call `screen_jobs(source: "posts", items)` once with every hiring post on the page (company, role, post link, location if stated, and the post text — first ~1200 chars). Work ONLY on its `work` list (+ `retry`); everything else is already handled or already saved as skipped. Then for each post in `work`:
    - Keep **every hiring post for a Salesforce Developer / Engineer role** (Akshay, 30 Oct: developer roles only — skip Architect, Admin, Consultant, BA, QA and Manager posts; the app skips them anyway). Ignore (don't save) "open to work" posts by candidates, bench-sales hotlists ("we have consultants available"), job-board digests and posts with no role. Save as skipped the hiring posts that fail the rules (not Salesforce, US-only/W2/clearance, onsite/hybrid, country-locked).
    - Company = the hiring company named in the post (or the poster's company if it's their own hiring). Role = the role title in the post.

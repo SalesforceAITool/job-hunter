@@ -128,9 +128,21 @@ _POST_ID = re.compile(r"(?:urn:li:|urn%3Ali%3A)(?:activity|share|ugcPost)(?::|%3
 
 
 def post_id(url: str) -> str:
-    """LinkedIn post id from a feed/update URN link or a /posts/...-activity-<id>- link ("" if none)."""
-    m = _POST_ID.search(str(url or ""))
-    return (m.group(1) or m.group(2)) if m else ""
+    """LinkedIn post id from a feed/update URN link or a /posts/...-activity-<id>- link. 16 Nov: LinkedIn's search
+    page no longer carries post ids, so a post can also be given as a text key ("poster | first lines of the post",
+    from the posts prompt's JS) -> "k" + a hash of the normalised text. "" for an empty value or a bare link."""
+    u = str(url or "").strip()
+    m = _POST_ID.search(u)
+    if m:
+        return m.group(1) or m.group(2)
+    if not u or re.match(r"(?i)https?://", u) or u.startswith("post:"):
+        return ""
+    norm = re.sub(r"[^a-z0-9]+", " ", u.lower()).strip()
+    if len(norm) < 12:
+        return ""
+    import hashlib
+    # poster + the first ~100 characters only: the same post read with or without "…more" expanded keeps its key
+    return "k" + hashlib.sha1(norm[:120].encode("utf-8")).hexdigest()[:24]
 
 
 def filter_posts(conn, run_id, urls) -> dict:

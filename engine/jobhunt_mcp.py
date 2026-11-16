@@ -110,7 +110,7 @@ TOOLS = [
     },
     {
         "name": "new_posts",
-        "description": "LinkedIn posts lane: call once per search page, right after listing the posts' links and BEFORE get_page_text, with every post link on the page. Returns new (posts never read before: read only these) and seen (already read in an earlier run, hiring or not: never read them again). new empty -> skip this search page without reading it.",
+        "description": "LinkedIn posts lane: call once per search page BEFORE get_page_text, with every post key from the prompt's key JS (\"poster | first lines\") and/or post links. Returns new (posts never read before: read only these) and seen (already read in an earlier run, hiring or not: never read them again). new empty -> skip this search page without reading it.",
         "inputSchema": {"type": "object", "properties": {
             "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]},
     },
