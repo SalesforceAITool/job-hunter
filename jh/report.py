@@ -23,6 +23,8 @@ log = logging.getLogger("jobhunter.report")
 META_KEY = "daily_report_last_end"
 MAX_DAYS = 7                      # a report never looks back further than a week
 RETRY_S = 30 * 60                 # a failed send (no internet, Gmail limit) is tried again after 30 minutes
+LATE_S = 2 * 3600                 # report time passed more than this ago (laptop was off) = a late report
+GAP_S = 60 * 60                   # an hour or more with no Job Hunter activity is listed in the report
 LIST_MAX = 60                     # rows per section in the email (counts are always complete)
 _next_try = {"at": 0.0}
 
@@ -134,6 +136,16 @@ def collect(conn, start, end) -> dict:
         except (TypeError, ValueError):
             pass
     out["ai_usd"] = round(usd, 2)
+    # stretches with no Job Hunter activity at all (laptop off / asleep, app closed, or a stuck run)
+    gaps, cur = [], start
+    for (ts,) in conn.execute("SELECT ts FROM events WHERE ts>=? AND ts<? ORDER BY ts", (a, b)):
+        t = db.parse_ts(ts)
+        if t and (t - cur).total_seconds() >= GAP_S:
+            gaps.append((_iso(cur), _iso(t)))
+        cur = max(cur, t) if t else cur
+    if (end - cur).total_seconds() >= GAP_S:
+        gaps.append((_iso(cur), _iso(end)))
+    out["gaps"] = gaps
     one = lambda q, *p: conn.execute(q, p).fetchone()[0]
     out["totals"] = {
         "easy_apply": one("SELECT COUNT(*) FROM portal_apps WHERE status='submitted' AND ats='linkedin_easy_apply'"),
@@ -143,6 +155,12 @@ def collect(conn, start, end) -> dict:
     }
     out["applied"] = len(out["easy_apply"]) + len(out["portals"])
     return out
+
+
+def _span(g):
+    secs = (db.parse_ts(g[1]) - db.parse_ts(g[0])).total_seconds()
+    h, m = int(secs // 3600), int(secs % 3600 // 60)
+    return ("%d h %d min" % (h, m)) if h else ("%d min" % m)
 
 
 def _label_window(s):
@@ -199,6 +217,8 @@ def render(s, title_day=None) -> tuple:
         (_when(r["updated_at"]), "%s — %s: %s" % (_company(r["company"]), _role(r["role"]),
                                                   _first_question(r["questions_json"]) or "needs a check"),
          link(r["apply_url"]) or link(r["url"])) for r in s["waiting"]]))
+    sections.append(("Job Hunter was not running (laptop off or asleep, or app closed)", [
+        (_when(g[0]), "until %s (%s)" % (_when(g[1]), _span(g)), "") for g in s.get("gaps") or []]))
     sections.append(("Emails that did not go out", [
         (_when(m["sent_at"]), "%s → %s: %s" % (_company(m["company"]), m["email"] or "?", m["why"]), "")
         for m in s["not_sent"]]))
@@ -282,6 +302,16 @@ def due(conn, cfg=None, now_dt=None):
     last = db.parse_ts(_meta(conn, META_KEY))
     if last and last >= slot:
         return None
+    # 16 Nov: the first report went out the moment Job Hunter started after 5 days off - all zeros, which read as
+    # "it is not applying". Now a report that is late (laptop off at report time) goes out on start only if Job Hunter
+    # actually did something since the last one; otherwise it waits for the next report time and covers it all.
+    if now_dt - slot > timedelta(seconds=LATE_S):
+        if not last:
+            return None
+        n = conn.execute("SELECT COUNT(*) FROM runs WHERE started_at>=? AND started_at<?",
+                         (_iso(last), _iso(now_dt))).fetchone()[0]
+        if not n:
+            return None
     start = last or now_dt.replace(hour=0, minute=0, second=0, microsecond=0)
     start = max(start, now_dt - timedelta(days=MAX_DAYS))
     return start, now_dt

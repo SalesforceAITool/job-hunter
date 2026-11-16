@@ -87,21 +87,22 @@ class DailyReportTests(TempData, unittest.TestCase):
     def test_sent_once_a_day_at_the_set_hour(self):
         self.fill_day()
         cfg = config.load()
-        # first time, before 11 PM: yesterday's slot has passed with no report yet -> today so far goes out
-        res = report.tick(self.conn, cfg, now_dt=ist(2026, 11, 11, 18), now_s=1)
+        # 16 Nov: the very first report no longer goes out the moment Job Hunter starts - it waits for 11 PM
+        self.assertIsNone(report.tick(self.conn, cfg, now_dt=ist(2026, 11, 11, 18), now_s=1))
+        self.assertIsNone(report.tick(self.conn, cfg, now_dt=ist(2026, 11, 11, 22, 59), now_s=2))
+        res = report.tick(self.conn, cfg, now_dt=ist(2026, 11, 11, 23, 0), now_s=3)   # 11 PM: the whole day
         self.assertTrue(res["ok"], res)
         self.assertEqual(self.outbox()[-1]["To"], "apply@example.com")
-        self.assertIsNone(report.tick(self.conn, cfg, now_dt=ist(2026, 11, 11, 22, 59), now_s=2))
-        res = report.tick(self.conn, cfg, now_dt=ist(2026, 11, 11, 23, 0), now_s=3)   # 11 PM: since 6 PM
-        self.assertTrue(res["ok"])
-        self.assertEqual(res["applied"], 0)
+        self.assertEqual(res["applied"], 3)
         self.assertIsNone(report.tick(self.conn, cfg, now_dt=ist(2026, 11, 12, 9), now_s=4))
-        self.assertEqual(len(self.outbox()), 2)
+        self.assertEqual(len(self.outbox()), 1)
 
     def test_laptop_off_at_report_time_sends_when_back(self):
         cfg = config.load()
         self.conn.execute("INSERT INTO app_meta (k, v) VALUES (?, ?)", (report.META_KEY, "2026-11-10T23:00:00+05:30"))
         self.fill_day()
+        self.conn.execute("INSERT INTO runs (started_at, status, trigger, stats_json) VALUES (?, 'done', 'li_fast', '{}')",
+                          ("2026-11-11T10:00:00+05:30",))
         res = report.tick(self.conn, cfg, now_dt=ist(2026, 11, 12, 8), now_s=1)       # missed 11 Nov 11 PM
         self.assertTrue(res["ok"])
         self.assertEqual(res["applied"], 3)                   # whole gap covered: 10 Nov 11 PM -> 12 Nov 8 AM
