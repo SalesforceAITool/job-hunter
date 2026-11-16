@@ -173,6 +173,9 @@ def screen(title, text="", location="", india_role=None):
         india_role = bool(re.search(r"\bindia\b", loc, re.I))
     if re.search(r"\((?:hybrid|on-?site)\)", loc, re.I):
         return False, "onsite/hybrid"
+    if re.search(r"\b(?:hybrid|on-?site|wfo|work\s+from\s+office)\b", title or "", re.I) \
+            and not re.search(r"\bremote\b|\bwfh\b", title or "", re.I):
+        return False, "onsite/hybrid"
     if body:
         r = experience_reason(body)
         if r:

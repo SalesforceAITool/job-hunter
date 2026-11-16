@@ -177,6 +177,7 @@ def queued(conn, limit=MAX_TARGETS) -> list:
         "SELECT * FROM watch_seen WHERE status='queued' ORDER BY first_seen, ext_id LIMIT ?", (limit,))]
 
 
+PROBE_WAIT_S = 2 * 3600          # public list unreadable for less than this since the last good check -> just wait
 EMAIL_BLOCK = re.compile(r"^\s*email:\s*add\s+([^\s@]{1,64}@[^\s)(,;]{1,120})", re.I)
 REDO_DAYS = 7
 
@@ -620,7 +621,23 @@ class Watcher:
         if found is None:
             if redo:          # this cycle: the forms to finish; the next cycle searches again
                 return redo[:cap], lanes
+            # 16 Nov: LinkedIn's public list pauses us (HTTP 429) for 15-60 min now and then. Falling back to an AI
+            # search every 10 minutes cost ~$0.37 a cycle for jobs the list shows anyway once it is back (the next
+            # good check looks back over the whole gap). So: wait without AI while the last good check is recent;
+            # if the list stays unreadable for long, the AI searches itself at most once an hour.
+            last_ok = float(self.state.get("probe_ok_at") or 0)
+            if last_ok and now - last_ok < PROBE_WAIT_S:
+                if not self.state.get("pause_said"):
+                    self.state["pause_said"] = True
+                    events.emit(conn, None, "watch", "step", "LinkedIn's public job list is pausing us for a while —"
+                                " Easy Apply waits (no AI spent) and picks up every job from the gap when it is back",
+                                "info", {"probe": self.state.get("probe")})
+                return [], [x for x in lanes if x != "easy_apply"]
+            if now - float(self.state.get("ai_search_at") or 0) < 3600:
+                return [], [x for x in lanes if x != "easy_apply"]
+            self.state["ai_search_at"] = now
             return [], lanes
+        self.state["pause_said"] = False
         cutoff = (db.now() - timedelta(days=2)).replace(microsecond=0).isoformat()
         fresh = [q for q in queued(conn, limit=50) if (q.get("first_seen") or "") >= cutoff][:max(0, cap - len(redo))]
         targets = redo[:cap] + fresh

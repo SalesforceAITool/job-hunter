@@ -184,7 +184,8 @@ def collect(conn, run_id, lane, regions=("us", "india", "world"), lookback="24h"
                              decision="skipped", skip_reason="posting closed", jd_text=jd["text"][:4000])
             continue
         ok, why = screen.screen(c["title"], jd["text"], loc, india_role=(c["region"] == "india") or None)
-        if ok and not extra_cards:            # guest search cards (watch-mode cards came from the Easy Apply filter too)
+        if ok:      # every card comes from LinkedIn's public list, whose remote filter is loose (16 Nov: the AI
+            # spent ~$0.37 a run skipping Pune / hybrid jobs the probe had sent it)
             ok, why = screen.guest_remote_check(loc, jd["text"])
         if not ok:
             counts["screened_out"] += 1
