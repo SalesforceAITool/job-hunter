@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="zh">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>计时页</title></head>
+<body>
+<h1>计时页</h1>
+<p>这一页每 100 毫秒数一下,每一帧画面也数一下;页面停了数字就不再涨。</p>
+<p>计时 <span id="ticks">0</span> · 画面 <span id="frames">0</span></p>
+<script>
+  window.ticks = 0;
+  window.frames = 0;
+  setInterval(function () { window.ticks++; document.getElementById('ticks').textContent = window.ticks; }, 100);
+  (function frame() { window.frames++; document.getElementById('frames').textContent = window.frames; requestAnimationFrame(frame); })();
+</script>
+</body>
+</html>

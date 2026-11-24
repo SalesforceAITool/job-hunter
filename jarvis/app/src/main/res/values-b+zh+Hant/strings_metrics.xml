@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="metrics_model">模型思考</string>
+    <string name="metrics_observe">讀取螢幕</string>
+    <string name="metrics_act">操作</string>
+    <string name="metrics_other">其他（等待、重試）</string>
+    <string name="metrics_title">執行統計</string>
+    <string name="metrics_sub">最近幾次執行的用時、來回次數和 Token</string>
+    <string name="metrics_empty">還沒有執行統計。讓 Mika 辦件事，這裡就會記下。</string>
+    <string name="metrics_note">只統計這臺手機上最近 %1$d 次執行；時間從 Mika 開始處理算起，第一次回報是第一次看到它在做什麼的時候。</string>
+    <string name="metrics_copy">複製 JSON</string>
+    <string name="metrics_share">分享 JSON</string>
+    <string name="metrics_last_10">最近 10 次</string>
+    <plurals name="metrics_runs">
+        <item quantity="other">%1$d 次</item>
+    </plurals>
+    <string name="duration_h_m">%1$d 小時 %2$d 分</string>
+    <string name="metrics_total">共 %1$s</string>
+    <plurals name="metrics_round_trips">
+        <item quantity="other">和模型來回 %1$d 次</item>
+    </plurals>
+    <string name="metrics_first_feedback_at">第一次回報 %1$s</string>
+    <string name="metrics_retry_wait">其中重試等待</string>
+    <string name="metrics_input_tokens">輸入 Token</string>
+    <string name="metrics_output_tokens">輸出 Token</string>
+    <string name="usage_cached">快取命中</string>
+    <string name="metrics_no_usage">沒報用量</string>
+    <string name="metrics_all_calls">全部邏輯呼叫</string>
+    <string name="metrics_all_http_calls">全部 HTTP 請求</string>
+    <plurals name="metrics_all_calls_value">
+        <item quantity="other">%1$d 次（含旁路呼叫和重試）</item>
+    </plurals>
+    <string name="metrics_steps">步數</string>
+    <string name="metrics_observe_act">讀取螢幕 / 操作</string>
+    <string name="metrics_observe_act_value">%1$d 次 / %2$d 次</string>
+    <string name="metrics_counted">統計了</string>
+    <plurals name="metrics_n_runs">
+        <item quantity="other">%1$d 次執行</item>
+    </plurals>
+    <string name="metrics_success_rate">辦成率</string>
+    <string name="metrics_success_value">%1$s（%2$d/%3$d）</string>
+    <string name="metrics_median_time">用時中位數</string>
+    <string name="metrics_median_feedback">第一次回報中位數</string>
+    <string name="metrics_avg_round_trips">平均和模型來回</string>
+    <string name="metrics_avg_round_trips_value">%1$s 次</string>
+    <string name="metrics_avg_tokens">平均 Token</string>
+    <plurals name="metrics_copied">
+        <item quantity="other">已複製 %1$d 次執行的小結</item>
+    </plurals>
+    <string name="metrics_export_failed">沒能匯出，資料可能太大，換個小一點的範圍試試。</string>
+    <string name="metrics_where_time">看時間花在哪</string>
+    <string name="metrics_overview">概況</string>
+    <string name="metrics_time_split">時間花在哪</string>
+    <string name="metrics_export">匯出</string>
+    <plurals name="metrics_summary_of">
+        <item quantity="other">這 %1$d 次執行的小結</item>
+    </plurals>
+    <string name="metrics_summary_sub">每次一項，可以拿去自己分析</string>
+    <plurals name="chat_steps_n">
+        <item quantity="other">%1$d 步</item>
+    </plurals>
+</resources>

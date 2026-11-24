@@ -1,0 +1,27 @@
+<resources>
+    <string name="device_access_group">远程亮屏与解锁</string>
+    <string name="device_access_title">允许远程亮屏与解锁</string>
+    <string name="device_access_sub">持有 MCP 访问令牌的电脑可以唤醒并解锁这台手机。</string>
+    <string name="device_access_credential">锁屏凭据</string>
+    <string name="device_access_no_credential">未设置 · 仅可解除滑动或无密码锁屏</string>
+    <string name="device_access_pin_saved">已保存 PIN · 点此更换</string>
+    <string name="device_access_password_saved">已保存密码 · 点此更换</string>
+    <string name="device_access_blocked">自动解锁已暂停 · 请在手机上检查并重新保存凭据</string>
+    <string name="device_access_clear">移除已保存的凭据</string>
+    <string name="device_access_foot">默认关闭。凭据加密保存在本机，不发送给模型或电脑。凭据尝试失败一次后暂停后续尝试；重启后请先亲手解锁一次。需先完成手机操作设置。</string>
+    <string name="device_access_pin">PIN</string>
+    <string name="device_access_password">密码</string>
+    <string name="device_access_value">锁屏凭据</string>
+    <string name="device_access_value_hint">输入当前的锁屏凭据</string>
+    <string name="device_access_repeat">确认凭据</string>
+    <string name="device_access_repeat_hint">再输入一次</string>
+    <string name="device_access_save">保存凭据</string>
+    <string name="device_access_pin_hint">填写当前的 4–16 位数字 PIN。尝试失败后重新保存，可允许再次尝试一次。</string>
+    <string name="device_access_password_hint">填写当前的 4–64 位密码，支持英文字母、数字、空格及常见英文符号；暂不支持其他字符和图案锁屏。</string>
+    <string name="device_access_save_failed">没能保存，请检查手机存储后重试。</string>
+    <string name="device_local_group">本机任务</string>
+    <string name="device_local_title">锁屏时运行本机任务</string>
+    <string name="device_local_sub">在本机发起的任务可以唤醒并解锁屏幕，无人值守地完成工作。</string>
+    <string name="device_local_foot">默认关闭。独立生效：不改变「连接电脑」里的「允许远程亮屏与解锁」，那个开关也不影响本开关。凭据共用下方加密保存的锁屏凭据；尝试失败一次后暂停后续尝试。</string>
+    <string name="device_local_unlock_failed">任务没能唤醒或解锁手机。请手动解锁，或在 设置 › 任务运行 里检查「锁屏时运行本机任务」开关和已保存的锁屏凭据。</string>
+</resources>

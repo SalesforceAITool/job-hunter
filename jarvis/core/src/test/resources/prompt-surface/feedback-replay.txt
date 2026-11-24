@@ -1,0 +1,32 @@
+### completed
+All steps of the earlier way of doing this were run (3 steps):
+1. phone_launch_app com.notes
+2. phone_tap 「新建」
+3. phone_type_text type 「今天天气不错」
+Read the app's current state to check the result; for a lookup task, find the answer in what you read, then answer the user directly.
+
+Current screen (read result; its refs can be used directly):
+### diverged, not executed
+1 of 3 steps were run automatically, following a way that worked before:
+1. phone_launch_app com.notes
+Step 2 expected phone_tap 「新建」 (the page before the action does not match), actually read com.notes: 请先登录 (this step was not run). Continue from the current screen or page.
+
+Current screen (read result; its refs can be used directly):
+### diverged, executed without effect
+1 of 3 steps were run automatically, following a way that worked before:
+1. phone_launch_app com.notes
+Step 2 was run, but the expected change did not show: expected phone_tap 「新建」 (no expected change after the action), actually read com.notes: 备忘录, 新建, 全部笔记. First check whether this step took effect; do not repeat it. Continue from the current screen or page.
+
+Current screen (read result; its refs can be used directly):
+### diverged with error code
+1 of 3 steps were run automatically, following a way that worked before:
+1. phone_launch_app com.notes
+Step 2 was run, but the expected change did not show: expected phone_tap 「新建」 (the action failed: obscured), actually read com.notes: 备忘录, 新建, 全部笔记; error code: obscured. First check whether this step took effect; do not repeat it. Continue from the current screen or page.
+
+Current screen (read result; its refs can be used directly):
+### stopped for confirmation
+1 of 2 steps were run automatically, following a way that worked before:
+1. phone_launch_app com.notes
+Step 2 is 「phone_tap 「提交订单」」, which needs the user's confirmation, so it was not run. Continue from the current screen or page, and handle the confirmation the normal way.
+
+Current screen (read result; its refs can be used directly):

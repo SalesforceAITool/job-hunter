@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 兼容性自检页上的控件 id:无障碍读到的资源 id 就是这些,自检按它们找控件 -->
+<resources>
+    <item name="selfcheck_title" type="id" />
+    <item name="selfcheck_note" type="id" />
+    <item name="selfcheck_count" type="id" />
+    <item name="selfcheck_button" type="id" />
+    <item name="selfcheck_input" type="id" />
+    <item name="selfcheck_tick" type="id" />
+    <item name="selfcheck_list" type="id" />
+</resources>

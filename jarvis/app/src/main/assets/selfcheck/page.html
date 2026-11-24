@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mika self-check page</title>
+<style>
+  body { font-family: sans-serif; margin: 24px; color: #111; background: #fff; }
+  button { font-size: 18px; padding: 12px 20px; }
+  p { font-size: 16px; }
+</style>
+</head>
+<body>
+<!-- 兼容性自检用的本地网页:随 App 打包,不联网。自检读出下面这行字,再点按钮核对状态变了 -->
+<h1>Mika self-check page</h1>
+<p id="marker">This is Mika's own local test page. SELFCHECK-READ-OK</p>
+<button id="selfcheck-button" type="button" onclick="clicked()">Tap me</button>
+<p id="status">Clicked 0</p>
+<script>
+  var clicks = 0;
+  function clicked() {
+    clicks++;
+    document.getElementById('status').textContent = 'Clicked ' + clicks;
+  }
+</script>
+</body>
+</html>

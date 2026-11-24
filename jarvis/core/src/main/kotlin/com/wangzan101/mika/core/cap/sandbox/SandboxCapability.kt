@@ -1,0 +1,114 @@
+package com.wangzan101.mika.core.cap.sandbox
+
+import com.wangzan101.mika.core.capability.Capability
+import com.wangzan101.mika.core.capability.CapabilityKey
+import com.wangzan101.mika.core.capability.CapabilityStatus
+import com.wangzan101.mika.core.capability.PromptEnv
+import com.wangzan101.mika.core.safety.guard.OffScreenGuard
+import com.wangzan101.mika.core.learn.knowledge.ScriptManifest
+import com.wangzan101.mika.core.learn.knowledge.ScriptState
+import com.wangzan101.mika.core.learn.knowledge.BundledScripts
+import com.wangzan101.mika.core.prompt.Prompts
+import com.wangzan101.mika.core.tool.AgentTool
+import com.wangzan101.mika.core.tool.ToolContext
+import com.wangzan101.mika.core.workspace.SandboxPaths
+
+/**
+ * Linux 沙箱:命令、技能脚本、工作区文件。设备支持时提供工具(运行环境没准备好时工具调用会等它);
+ * 不是屏幕操作,不过锁屏关卡,也不进屏幕守卫,由 [SandboxGuard] 另管。
+ */
+internal class SandboxCapability(
+    private val port: SandboxPort?,
+    /** 本次任务的工作区(对话 ID 或 `p:<projectId>`)。 */
+    private val workspace: () -> String,
+    visionEnabled: Boolean,
+    onCommand: (String) -> Unit,
+    onProgress: (String) -> Unit,
+    onPreparing: () -> Unit,
+    onScript: ((String) -> Unit)?,
+    folderAccess: Boolean = false,
+    /** 这个任务里沙箱命令累计最多跑多久(设置 › 干活时的档位);默认 30 分钟。 */
+    private val budgetMs: Long = SANDBOX_BUDGET_MS,
+    folderFileImporter: FolderFileImporter? = null,
+    private val folderTools: List<AgentTool> = emptyList(),
+) : Capability {
+    override val id = SANDBOX
+
+    val runner = port?.let { SandboxTools(it, workspace, visionEnabled, onCommand = onCommand, onProgress = onProgress, onPreparing = onPreparing, onScript = onScript, folderAccess = folderAccess, folderFileImporter = folderFileImporter) }
+
+    /** 设备支持沙箱(工具已提供,可能还在准备)。 */
+    fun available(): Boolean = runner?.available() == true
+
+    override val folds = true
+
+    override fun status(): CapabilityStatus = when (val s = port?.status()) {
+        null -> CapabilityStatus.Unavailable("no sandbox")
+        is SandboxStatus.Ready -> CapabilityStatus.Available
+        is SandboxStatus.NotInstalled -> CapabilityStatus.Degraded("not installed")
+        is SandboxStatus.Installing -> CapabilityStatus.Degraded(s.step)
+        is SandboxStatus.Unsupported -> CapabilityStatus.Unavailable(s.reason)
+        is SandboxStatus.Broken -> CapabilityStatus.Unavailable(s.reason)
+    }
+
+    override fun tools(): List<AgentTool> = if (runner?.foldersAvailable == true) SandboxGroup.tools + folderTools else SandboxGroup.tools
+
+    /** 这次的话带着工作区里的文件(附件一行写着 /workspace/ 下的路径):开局就展开沙箱一组。 */
+    override fun preload(task: String): Boolean = available() && "${SandboxPaths.WORKSPACE}/" in task
+
+    /** 沙箱那一组收着时不给。 */
+    override fun sections(env: PromptEnv): List<String> {
+        if (!env.isOpen(id) || SandboxGroup.tools.none { it.name in env.offered }) return emptyList()
+        val p = port?.takeIf { available() }
+        val shared = workspace().startsWith(PROJECT_WORKSPACE_PREFIX)
+        return listOf(env.gate(section(p?.status() ?: SandboxStatus.NotInstalled, p?.networkAllowed() == true, sharedWorkspace = shared)))
+    }
+
+    override val scripts = object : BundledScripts {
+        override fun offered() = available()
+
+        override suspend fun ready(): Boolean {
+            val p = port ?: return false
+            if (p.status() !is SandboxStatus.Ready) return false
+            p.prepare()
+            return true
+        }
+
+        override fun scripts(skillDir: String): List<ScriptState> {
+            val network = (port?.status() as? SandboxStatus.Ready)?.network == true
+            return port?.scriptManifest(skillDir).orEmpty().map { e ->
+                val (run, reason) = ScriptManifest.effectiveRunnable(e, network)
+                ScriptState(e.file, run, reason)
+            }
+        }
+    }
+
+    override fun onTaskStart(ctx: ToolContext) {
+        ctx[KEY] = this
+    }
+
+    override fun guard(): OffScreenGuard = SandboxGuard(budgetMs)
+
+    companion object {
+        val KEY = CapabilityKey<SandboxCapability>(SANDBOX)
+
+        /** 沙箱一段:写明此刻是否联网([network]:用户的联网设置);项目共享工作区和运行环境还没准备好时分别补一句。 */
+        fun section(status: SandboxStatus, network: Boolean, sharedWorkspace: Boolean = false): String = buildString {
+            append(Prompts.capability(SANDBOX).replace("{{network}}", if (network) NETWORK_ON else NETWORK_OFF))
+            if (sharedWorkspace) append("\n- ").append(SHARED_WORKSPACE)
+            if (status !is SandboxStatus.Ready) append("\n- ").append(PREPARING)
+        }
+
+        private const val PROJECT_WORKSPACE_PREFIX = "p:"
+
+        const val SHARED_WORKSPACE = "This conversation belongs to a project: all conversations in the same project share /workspace, so files created or updated by other conversations in this project may already be present."
+        const val PREPARING = "The environment is still being set up in the background. The first tool call waits for it (up to about two minutes); if it is still not ready, the tool says so."
+
+        const val NETWORK_ON = "on. The user allowed the sandbox to use the network; anything you send out leaves the phone, so only fetch what the task needs."
+        const val NETWORK_OFF = "off. Commands cannot reach the internet (no pip/npm/apk installs, no downloads). If the task really needs the network, tell the user they can turn on \"Allow scripts to go online\" (允许脚本联网) in Mika's settings."
+    }
+}
+
+/** 本任务的沙箱执行;没有沙箱为 null。 */
+internal val ToolContext.sandboxRunner: SandboxTools? get() = this[SandboxCapability.KEY]?.runner
+
+internal fun ToolContext.sandboxAvailable(): Boolean = this[SandboxCapability.KEY]?.available() == true

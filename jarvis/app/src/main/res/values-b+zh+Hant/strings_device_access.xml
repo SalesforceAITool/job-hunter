@@ -1,0 +1,27 @@
+<resources>
+    <string name="device_access_group">遠端喚醒螢幕與解鎖</string>
+    <string name="device_access_title">允許遠端喚醒螢幕與解鎖</string>
+    <string name="device_access_sub">持有 MCP 存取權杖的電腦可以喚醒並解鎖這臺手機。</string>
+    <string name="device_access_credential">螢幕鎖定憑證</string>
+    <string name="device_access_no_credential">未設定 · 僅可解除滑動或無密碼螢幕鎖定</string>
+    <string name="device_access_pin_saved">已儲存 PIN · 點此更換</string>
+    <string name="device_access_password_saved">已儲存密碼 · 點此更換</string>
+    <string name="device_access_blocked">自動解鎖已暫停 · 請在手機上檢查並重新儲存憑證</string>
+    <string name="device_access_clear">移除已儲存的憑證</string>
+    <string name="device_access_foot">預設關閉。憑證加密儲存在本機，不會傳送給模型或電腦。憑證嘗試失敗一次後暫停後續嘗試；重新開機後請先親手解鎖一次。需先完成手機操作設定。</string>
+    <string name="device_access_pin">PIN</string>
+    <string name="device_access_password">密碼</string>
+    <string name="device_access_value">螢幕鎖定憑證</string>
+    <string name="device_access_value_hint">輸入目前的螢幕鎖定憑證</string>
+    <string name="device_access_repeat">確認憑證</string>
+    <string name="device_access_repeat_hint">再輸入一次</string>
+    <string name="device_access_save">儲存憑證</string>
+    <string name="device_access_pin_hint">填寫目前的 4–16 位數字 PIN。嘗試失敗後重新儲存，可允許再嘗試一次。</string>
+    <string name="device_access_password_hint">填寫目前的 4–64 位密碼，支援英文字母、數字、空格及常見英文符號；暫不支援其他字元和圖案螢幕鎖定。</string>
+    <string name="device_access_save_failed">沒能儲存，請檢查手機儲存空間後重試。</string>
+    <string name="device_local_group">本機任務</string>
+    <string name="device_local_title">鎖定時執行本機任務</string>
+    <string name="device_local_sub">在本機發起的任務可以喚醒並解鎖螢幕，無人值守地完成工作。</string>
+    <string name="device_local_foot">預設關閉。獨立生效：不改變「連接電腦」裡的「允許遠端喚醒螢幕與解鎖」，該開關也不影響本開關。憑證共用下方加密儲存的螢幕鎖定憑證；嘗試失敗一次後暫停後續嘗試。</string>
+    <string name="device_local_unlock_failed">任務沒能喚醒或解鎖手機。請手動解鎖，或在 設定 › 任務運行 裡檢查「鎖定時執行本機任務」開關和已儲存的螢幕鎖定憑證。</string>
+</resources>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dev_adaptive">先讀元素，必要時看圖</string>
+    <string name="dev_adaptive_sub">控制項資訊夠用時不把圖片交給模型，讀不清時再補圖</string>
+    <string name="dev_inline">操作後帶回螢幕變化</string>
+    <string name="dev_inline_sub">每次操作後順帶看一眼螢幕,少一次單獨讀取螢幕</string>
+    <string name="dev_batch">有把握時連做幾步</string>
+    <string name="dev_batch_sub">確定的幾步一次做完,中途不再停下來問模型</string>
+    <string name="dev_deep_links">直接開啟要去的頁面</string>
+    <string name="dev_deep_links_sub">能用連結直達 App 裡的頁面,就不一層層點進去</string>
+    <string name="dev_light">簡單步驟交給輕量模型</string>
+    <string name="dev_light_sub">容易的步驟讓更快的輕量模型來做,難的仍由主模型做</string>
+    <string name="dev_replay">照著上次的做法做</string>
+    <string name="dev_replay_sub">做過的事按記住的操作路線快速重做,對不上就交回模型</string>
+    <string name="dev_parallel">不同對話同時進行</string>
+    <string name="dev_parallel_sub">不同對話的任務各佔一塊虛擬螢幕,一起做</string>
+    <string name="dev_compaction">長任務的摘要分條寫</string>
+    <string name="dev_compaction_sub">步驟多了要壓縮時,按目標、事實、進展、下一步記下來</string>
+    <string name="dev_group">做事方式</string>
+    <string name="dev_autonomy">自主模式</string>
+    <string name="dev_autonomy_sub">開啟後連付款也不先問你，Mika 直接做完；關著時只有付款先問</string>
+    <string name="dev_note">這些開關影響 Mika 做事的方式和速度，一般保持預設。</string>
+    <string name="dev_grounding">看圖定位已驗證</string>
+    <string name="dev_grounding_sub">看圖模型 %1$s 實測過框得準再開啟；關著時，它框出的位置要另有佐證才會去點。</string>
+    <string name="dev_speed">速度</string>
+    <string name="dev_experiments">實驗</string>
+    <string name="dev_run_log">執行記錄</string>
+    <string name="dev_screen_tables">新畫面元素表格</string>
+    <string name="dev_screen_tables_sub">首次讀取畫面時，將重複欄位寫成表格；保留元素參照和完整介面樹。</string>
+    <string name="dev_device_files">匯入手機檔案</string>
+    <string name="dev_device_files_sub">允許 Mika 將手機共用儲存空間中的檔案複製到工作區。變更對新任務生效。</string>
+</resources>

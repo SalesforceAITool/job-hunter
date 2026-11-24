@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="selfcheck_title">兼容性自检</string>
+    <string name="selfcheck_row_sub">看看这台手机上哪些能用,方便反馈</string>
+    <string name="selfcheck_intro">大约 1 分钟。不会操作你的其他 App,不改设置,不联网。检查时请停留在这一页。</string>
+    <string name="selfcheck_start">开始自检</string>
+    <string name="selfcheck_again">再查一次</string>
+    <string name="selfcheck_cancel">取消</string>
+    <string name="selfcheck_task_running">有任务正在进行,等它结束后再自检。</string>
+    <string name="selfcheck_checks">检查项目</string>
+    <string name="selfcheck_report">报告</string>
+    <string name="selfcheck_copy">复制报告</string>
+    <string name="selfcheck_github">去 GitHub 反馈</string>
+    <string name="selfcheck_copied">报告已复制</string>
+    <string name="selfcheck_github_copied">报告已复制,在打开的页面里粘贴到「自检报告」一栏。</string>
+    <string name="selfcheck_report_note">报告里只有机型、系统版本和每一项的结果,不含账号、App 列表和你的内容。发出前可以先看一遍。</string>
+
+    <string name="selfcheck_check_device">设备</string>
+    <string name="selfcheck_check_permissions">权限</string>
+    <string name="selfcheck_check_helper">内置助手</string>
+    <string name="selfcheck_check_display">虚拟屏</string>
+    <string name="selfcheck_check_launch">打开 App</string>
+    <string name="selfcheck_check_reading">读屏</string>
+    <string name="selfcheck_check_actions">点按和打字</string>
+    <string name="selfcheck_check_alive">持续运行</string>
+    <string name="selfcheck_check_main">不打扰你的屏幕</string>
+    <string name="selfcheck_check_browser">内置浏览器</string>
+    <string name="selfcheck_check_sandbox">沙箱</string>
+    <string name="selfcheck_check_copies">分身与工作资料</string>
+
+    <string name="selfcheck_status_pending">等待</string>
+    <string name="selfcheck_status_running">检查中</string>
+    <string name="selfcheck_status_pass">通过</string>
+    <string name="selfcheck_status_partial">部分可用</string>
+    <string name="selfcheck_status_fail">未通过</string>
+    <string name="selfcheck_status_skipped">跳过</string>
+
+    <string name="selfcheck_line_pending">还没开始</string>
+    <string name="selfcheck_line_running">正在检查…</string>
+    <string name="selfcheck_line_pass">正常</string>
+    <string name="selfcheck_line_needs">跳过:要先通过「%1$s」</string>
+    <string name="selfcheck_line_other">没通过,详见报告。</string>
+
+    <string name="selfcheck_advice_too_old">系统低于安卓 12,手机操作用不了;聊天、网页和沙箱照常能用。</string>
+    <string name="selfcheck_advice_no_wireless">系统里没有无线调试,可以改用电脑经 USB 启动手机操作。</string>
+    <string name="selfcheck_advice_phone_unavailable">这个环境不能操作手机里的 App(没有开发者选项和无线调试);聊天、网页、文件和计算照常可用。</string>
+    <string name="selfcheck_advice_a11y_off">无障碍没开:在设置 › 手机操作里打开 Mika 的无障碍。</string>
+    <string name="selfcheck_advice_a11y_restart">无障碍开着却没在运行:在系统设置里把 Mika 的无障碍关掉再打开。</string>
+    <string name="selfcheck_advice_notifications">通知没允许,看不到任务进度和「需要你」的提醒。</string>
+    <string name="selfcheck_advice_battery">电池受限制,Mika 在后台可能被停掉;可以在「恢复与修复」里放开。</string>
+    <string name="selfcheck_advice_setup">内置助手没在运行:先在设置 › 手机操作里完成设置,再查一次。</string>
+    <string name="selfcheck_advice_display">建不了 Mika 的虚拟屏。重新连接内置助手后再试;还不行请反馈给我们。</string>
+    <string name="selfcheck_advice_focus">Mika 的虚拟屏没有自己的焦点,Mika 在后台操作时你屏幕上的输入焦点可能短暂丢失,不影响使用。</string>
+    <string name="selfcheck_advice_launch">页面没能开到 Mika 的虚拟屏上,请反馈给我们。</string>
+    <string name="selfcheck_advice_on_main">系统设置开到了你的屏幕上,而不是 Mika 的虚拟屏,请反馈给我们。</string>
+    <string name="selfcheck_advice_settings_in_use">系统设置正开在你的屏幕上,这一步没去打开它。关掉系统设置后再查一次。</string>
+    <string name="selfcheck_advice_read">读不到页面上的控件。把 Mika 的无障碍关掉再打开,再查一次。</string>
+    <string name="selfcheck_advice_blank">虚拟屏的画面是一片黑或一片空,请反馈给我们。</string>
+    <string name="selfcheck_advice_action">有的操作没生效(见报告),请反馈给我们。</string>
+    <string name="selfcheck_advice_frames">虚拟屏的画面过一会儿就不动了,任务可能卡住,请反馈给我们。</string>
+    <string name="selfcheck_advice_main">检查期间你的屏幕换了内容。如果你一直停在这一页,请反馈给我们。</string>
+    <string name="selfcheck_advice_no_webview">系统里没有可用的 WebView,内置浏览器用不了。可以安装或更新系统的 WebView 组件。</string>
+    <string name="selfcheck_advice_web">内置浏览器没能读出或点到本地测试页,请反馈给我们。</string>
+    <string name="selfcheck_advice_sandbox_unsupported">沙箱只在 64 位 ARM 手机上有。</string>
+    <string name="selfcheck_advice_sandbox_not_prepared">沙箱的运行环境还没准备好,第一次有任务用到时会自动准备;准备好后再查一次。</string>
+    <string name="selfcheck_advice_sandbox_failed">沙箱里的命令没跑出预期的结果。可以在「文件与计算环境」里重置运行环境后再试。</string>
+    <string name="selfcheck_advice_timeout">这一项用时太长。再查一次;总是超时请反馈给我们。</string>
+    <string name="selfcheck_advice_error">这一项出错了,请反馈给我们。</string>
+    <string name="selfcheck_advice_out_of_time">整次自检的时间用完了,这一项没来得及查。</string>
+    <string name="selfcheck_advice_cancelled">已取消。</string>
+
+    <string name="selfcheck_target_title">Mika 自检页</string>
+    <string name="selfcheck_target_note">这是 Mika 自己的测试页。兼容性自检在这里点按和打字,不会操作你的其他 App。</string>
+    <string name="selfcheck_target_taps">点了 %1$d 次</string>
+    <string name="selfcheck_target_button">点我</string>
+    <string name="selfcheck_target_input">在这里打字</string>
+    <string name="selfcheck_target_tick">计时 %1$d</string>
+    <string name="selfcheck_target_row">第 %1$d 行</string>
+
+    <string name="selfcheck_screen_off_start">熄屏自检</string>
+    <string name="selfcheck_screen_off_wait">请在 45 秒内按电源键熄屏并锁定手机。测试完成后回到这里查看结果。</string>
+    <string name="selfcheck_screen_off_interrupted">测试期间主屏亮起、手机被解锁，或有其他任务开始。</string>
+    <string name="selfcheck_screen_off_lock">已熄屏并锁定</string>
+    <string name="selfcheck_screen_off_capture">虚拟屏截图</string>
+    <string name="selfcheck_screen_off_no_app_window">无障碍服务没有报告虚拟屏上的应用窗口</string>
+    <string name="selfcheck_screen_off_no_root">找到了应用窗口，但根节点读不出来</string>
+    <string name="selfcheck_screen_off_no_settings_window">无障碍服务没有报告虚拟屏上的设置窗口</string>
+    <string name="selfcheck_screen_off_no_elements">设置窗口里没有可读取的元素</string>
+    <string name="selfcheck_screen_off_tree_readable">可以读取设置页的无障碍树</string>
+    <string name="selfcheck_screen_off_no_frame">没有收到虚拟屏的画面</string>
+    <string name="selfcheck_screen_off_black_frame">虚拟屏画面是黑的</string>
+    <string name="selfcheck_screen_off_frame_readable">虚拟屏画面里有可见内容</string>
+</resources>

@@ -1,0 +1,86 @@
+### empty_reply
+Your reply was empty. Continue the task with your tools, or reply with your final answer to the user in text.
+### truncated_reply
+Your reply was cut off by the output limit before it was complete. Continue the task with your tools, or reply again with a shorter final answer.
+### unconfirmed_nudge
+Before this answer goes to the user:
+These items in your answer do not appear in anything you read during this task:
+- ¥89
+- 「已发送」
+Check this: read the place again if you can, then reply with your corrected final answer. Anything you still cannot confirm, say plainly in the answer that you could not confirm it instead of stating it as fact. This check happens once; your next answer goes to the user.
+### language_nudge
+Before this answer goes to the user: it is written mostly in Chinese, but the user's latest message is in Latin script. Rewrite the whole answer in the language of the user's latest message. Translate what you read; keep the original only for proper names, or for labels the user must find on the screen, written as "translation (original)". Do not change any value: numbers, dates, amounts, units and names stay exactly as read. This check happens once; your next answer goes to the user.
+### leaked_call_nudge
+Your last reply contained a call to the tool `ask_user` written out as plain text, so it was not run: a tool call only takes effect when it is made through tool calling. If you meant to call a tool, call it again now; otherwise reply with your final answer to the user in plain words. This check happens once.
+### answer_or_failure
+If the result the task asks for needs a feature, menu, setting, page, item or value that is not there, call end_not_done listing what you checked. Only a yes/no question about whether something exists is answered by its absence: if the app's own search gave a definitive none, reply that it does not exist, quoting the text it showed.
+### give_up_advice
+You keep repeating without progress. Stop revisiting the same places. If a specific missing choice or detail from the user would decide the next route, call ask_user and ask it once. Otherwise, continue only with a concrete untried route; if there is none, call end_not_done with the confirmed partial result, what is still missing and what you checked. If the result the task asks for needs a feature, menu, setting, page, item or value that is not there, call end_not_done listing what you checked. Only a yes/no question about whether something exists is answered by its absence: if the app's own search gave a definitive none, reply that it does not exist, quoting the text it showed.
+### repeated_input_advice
+You have already typed "外卖" 3 times in this task; typing it again will show the same result. If what you have checked shows the target is not there, stop. If the result the task asks for needs a feature, menu, setting, page, item or value that is not there, call end_not_done listing what you checked. Only a yes/no question about whether something exists is answered by its absence: if the app's own search gave a definitive none, reply that it does not exist, quoting the text it showed.
+### progress_check
+Progress check: 10 of 20 steps used and the task is not finished. If what you have checked so far (search inside the app, its main menus) shows the target is not there or cannot be reached, stop now. If the result the task asks for needs a feature, menu, setting, page, item or value that is not there, call end_not_done listing what you checked. Only a yes/no question about whether something exists is answered by its absence: if the app's own search gave a definitive none, reply that it does not exist, quoting the text it showed. Continue only if you have a concrete, untried next place to look.
+### final_turn
+You are out of steps; no more phone actions are possible. If the task is done, reply to the user with the result in text, stating only what you read. If it is not done or only partly done, call end_not_done with the confirmed partial result, what you checked and what is missing.
+### completed_closeout
+Your acceptance criteria are satisfied or the confirmed count has reached its total. Do not do more work, repeat checks or prove the result again. Reply to the user now with the confirmed result. If the progress report was wrong, call end_not_done with what is actually missing; do not call any other tool.
+### no_new_data_closeout
+The last 3 data-collection results contained no new content. Stop scrolling, rereading and collecting. Reply with the requested result if the collected data is complete. Otherwise call end_not_done with the confirmed partial result, the latest boundary reached, and what is still missing. Do not call any other tool.
+Latest confirmed progress: 已收集 · 12 · 2026-10-31
+### screenshot_note
+Current screenshot for the observation above.
+### file_image_note
+The image file read above.
+### action_frame_note
+The screen right after the call above. Act with ref + snapshotId from the elements in that result's screen field; the image is only for understanding, and its screenshotId is for view_past_screens, never a snapshotId.
+### batch_view_note
+The screen after the steps above. Act with ref + snapshotId from these elements; the image (if any) is only for understanding, and its screenshotId is for view_past_screens, never a snapshotId.
+screen: 
+### recalled_note
+Recalled earlier screenshots, in the order of the view_past_screens result entries marked imageAttached. They show past screens, not the current one.
+### nudge_source
+no answer given
+### unconfirmed_source
+answer check
+### language_source
+answer language
+### leaked_call_source
+tool call as text
+### progress_source
+step check
+### final_source
+out of steps
+### closeout_source
+task completion
+### replay_source
+earlier way of doing this
+### approved_step_first
+Do the approved step on its own first: the user approved one action. Do exactly that action as a single tool call (not inside do_steps or web_script), then continue.
+### replay_screen_header
+Current screen (read result; its refs can be used directly):
+### replay_no_screen
+The current screen could not be read: observe first, then continue.
+### confirmation_declined
+The user did not approve. Do not try this action again; report where things stand, then end.
+### confirmation_approved
+The user approved this once. Do this one action right away, without tapping anything else, scrolling, going back or switching apps in between (typing is fine). The approval is valid for 3 steps; the next matching action uses it up whether it succeeds or not, and doing it again needs a new request.
+### no_answer_message
+No answer came within the time limit.
+### handback_note
+Getting the phone back only means control was returned; it does not mean the step succeeded. Read the current screen first to check the result, then continue or report.
+### no_handback_note
+There was no handback. Do not say the user took care of it; report how the takeover ended as it is, and try another way or end if needed.
+### user_finished_note
+The user says they finished it themselves.
+### user_finished_prompt
+The user says they finished it themselves. Only observe to read the app's current state and check: if it is confirmed done, answer the user directly with what you read; if you cannot confirm it, call end_not_done. Do nothing else.
+### loop.repeating_items
+Your last steps repeat the same cycle — open an item, act on it, go back — 3 times in a row. If items remain, finish them in one do_each call instead of one item per turn: item says how to recognize one entry (role/text/resourceId), body is the steps for ONE item with "@item" as targetText, ending with back.
+### loop result 1.o1
+{"ok":true,"currentApp":"com.x","snapshotId":"snap1","screenshotId":1,"screenChangedDuringRead":false,"viewport":{"width":1080,"height":2400},"elements":[{"ref":"@e1","role":"button","name":"搜索","center":{"x":500,"y":50},"size":[999,100],"resourceId":"a:id/s"}],"truncated":false,"moreTools":"From your next call on you also have the full phone tools (phone_observe, phone_list_elements, phone_tap, phone_scroll and the rest), with their descriptions and how to use them."}
+### loop result 1.o2
+{"ok":false,"error":"parallel_tool_call_skipped","message":"Phone actions run one at a time. Observe the result of the first action, then try again."}
+### loop result 1.c
+{"ok":false,"error":"invalid_arguments","message":"amount: required","recoverable":true}
+### loop result 2.c
+{"ok":false,"error":"invalid_arguments","message":"amount: required","recoverable":true}

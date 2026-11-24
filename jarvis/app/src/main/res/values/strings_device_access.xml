@@ -1,0 +1,27 @@
+<resources>
+    <string name="device_access_group">Remote wake and unlock</string>
+    <string name="device_access_title">Allow remote wake and unlock</string>
+    <string name="device_access_sub">A computer with your MCP token can wake and unlock this phone.</string>
+    <string name="device_access_credential">Screen lock credential</string>
+    <string name="device_access_no_credential">Not configured · swipe or no screen lock only</string>
+    <string name="device_access_pin_saved">PIN saved · tap to replace</string>
+    <string name="device_access_password_saved">Password saved · tap to replace</string>
+    <string name="device_access_blocked">Unlock paused · check and save the credential again on this phone</string>
+    <string name="device_access_clear">Remove saved credential</string>
+    <string name="device_access_foot">Off by default. Credentials stay encrypted on this phone and are never sent to a model or computer. One failed credential attempt pauses further attempts. After a restart, unlock the phone yourself once first. Phone control must be set up.</string>
+    <string name="device_access_pin">PIN</string>
+    <string name="device_access_password">Password</string>
+    <string name="device_access_value">Credential</string>
+    <string name="device_access_value_hint">Enter your current screen lock</string>
+    <string name="device_access_repeat">Confirm</string>
+    <string name="device_access_repeat_hint">Enter it again</string>
+    <string name="device_access_save">Save credential</string>
+    <string name="device_access_pin_hint">Use the current 4–16 digit PIN. Saving again allows one new attempt after a failure.</string>
+    <string name="device_access_password_hint">Use the current 4–64 character password: English letters, numbers, spaces and common ASCII symbols. Other characters and pattern locks are not supported.</string>
+    <string name="device_access_save_failed">Could not save. Check the phone storage and try again.</string>
+    <string name="device_local_group">Local tasks</string>
+    <string name="device_local_title">Run tasks while locked</string>
+    <string name="device_local_sub">Tasks started on this phone can wake and unlock the screen to work unattended.</string>
+    <string name="device_local_foot">Off by default. Works on its own: it does not change “Allow remote wake and unlock” under Connect a computer, and that switch does not change this one. Uses the same encrypted screen-lock credential below; one failed attempt pauses further attempts.</string>
+    <string name="device_local_unlock_failed">The task couldn’t wake or unlock the phone. Unlock it yourself, or check “Run tasks while locked” and the saved screen-lock credential under Settings › Task running.</string>
+</resources>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 测试包的账号认证器类型:只用来让测试包出现在系统的账号认证器表里 -->
+<account-authenticator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accountType="com.wangzan101.mika.test"
+    android:label="Mika test account" />

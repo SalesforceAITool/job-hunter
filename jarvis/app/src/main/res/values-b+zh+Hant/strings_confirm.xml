@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="confirm_note">花錢的操作每次都要你同意。</string>
+    <string name="confirm_pay">付款</string>
+    <string name="confirm_delete">刪除</string>
+    <string name="confirm_order">下單</string>
+    <string name="confirm_submit">提交</string>
+    <string name="confirm_other">其他操作</string>
+    <string name="confirm_root">root 指令</string>
+    <string name="confirm_root_where">整部手機(root)</string>
+    <string name="confirm_title">要你同意:%1$s</string>
+    <string name="confirm_in_app">在 %1$s</string>
+    <string name="confirm_target">目標:%1$s</string>
+    <string name="confirm_content">內容:%1$s</string>
+</resources>
