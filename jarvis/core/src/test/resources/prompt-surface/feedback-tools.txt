@@ -15,9 +15,9 @@
 ### finish without evidence
 {"ok":false,"error":"unknown_tool","tool":"finish","message":"There is no tool 'finish' any more. To do that now, reply to the user with your answer as text, without calling any tool. Nothing was done.","recoverable":true}
 ### pay via confirmation
-{"ok":false,"error":"invalid_arguments","message":"amount: required","recoverable":true}
+{"ok":false,"error":"payment_requires_takeover","message":"Payment is not confirmed here: the user pays with their own hands. Open the payment page, then call hand_to_user with reason payment, giving the item, the amount shown and the address; afterwards check the order status.","recoverable":true}
 ### order without amount
-{"ok":false,"error":"invalid_arguments","message":"amount: required","recoverable":true}
+{"ok":false,"error":"invalid_arguments","message":"amount: required: the total the user will pay, as shown on screen. An action that spends no money needs no approval: do it directly","recoverable":true}
 ### barrier popup
 {"ok":true,"kind":"popup","hint":"A promotion, guide or update dialog that can be closed is not a blocker. Close it with its own close control (×, 跳过, 以后再说, Skip, Later), then observe again. Do not call hand_to_user for it."}
 ### barrier login

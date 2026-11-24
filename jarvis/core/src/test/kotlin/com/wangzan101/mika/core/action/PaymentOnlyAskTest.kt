@@ -134,6 +134,19 @@ class PaymentOnlyAskTest {
         assertTrue(sink.all.none { it is RunEvent.Confirmation })
     }
 
+    // Jarvis: with confirmSends on, a send is stopped until the user approves, and the request needs no amount
+    @Test fun confirmSendsStopsSendingUntilApproved() = runTest {
+        val s = Chat()
+        val m = FakeModel(OBSERVE, tap("@e3"), GIVE_UP)
+        loop(m, s, approvals = object : ApprovalSettings {
+            override fun autonomous() = false
+            override fun confirmSends() = true
+        }).run("t")
+        assertTrue(s.taps.isEmpty())
+        assertEquals("confirmation_required", m.result(2).s("error"))
+        assertEquals("send", m.result(2).s("action"))
+    }
+
     @Test fun deletingUninstallingTypingPasswordsAndPlainTapsAllRunWithoutAsking() = runTest {
         val s = Chat()
         val m = FakeModel(OBSERVE, tap("@e7"), tap("@e4"), type("@e5", "x"), tap("@e6"), FINISH)

@@ -84,6 +84,9 @@ internal class ToolContext(
 
     /** 最近一次被拒的付款申报;接管付款时补上模型没写的商品和金额。 */
     var refusedPay: ConfirmationRequest? = null
+
+    /** Jarvis: whether sending (messages, email, forms) is confirmed with the user first, see [com.wangzan101.mika.core.action.ApprovalSettings.confirmSends]. */
+    var confirmSends: () -> Boolean = { false }
     /** 本次任务有没有成功打开过 App;没有时核查器知道没有屏幕可对照。 */
     var appOpened = false
     /** 本次调用的编号;页面脚本里的动作按它编号。 */

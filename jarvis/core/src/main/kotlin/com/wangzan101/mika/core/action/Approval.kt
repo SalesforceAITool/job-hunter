@@ -33,6 +33,9 @@ fun interface ApprovalSettings {
     /** 自主模式:连付款也不先问。 */
     fun autonomous(): Boolean
 
+    /** Jarvis: also ask before sending a message, email or form (the user reviews recipient and text). Off by default. */
+    fun confirmSends(): Boolean = false
+
     companion object {
         /** 询问(默认):付款和工具声明要问的那几步(见 [Risk.ask])先问。 */
         val ASK = ApprovalSettings { false }
@@ -49,18 +52,18 @@ sealed interface Approval {
 }
 
 /**
- * Jarvis: in Ask mode, sending (messages, email, form submits) is also confirmed with the user first.
+ * Jarvis: with [ApprovalSettings.confirmSends], sending (messages, email, form submits) is also confirmed with the user first.
  * 审批判定:纯函数。付款和工具声明要问的(见 [Risk.ask])要问;问不到人(无人值守、子任务)或不在手机上
  * (渠道、定时、MCP 发起的)时这些都不做。
  */
 object ApprovalPolicy {
-    fun decide(risk: Risk, run: RunProvenance = RunProvenance()): Approval = when {
+    fun decide(risk: Risk, run: RunProvenance = RunProvenance(), confirmSends: Boolean = false): Approval = when {
         // 无人值守/不在手机上:付款、工具声明要问的、不可逆的都不做;只读、界面改动、对外但可撤销的照做
         (run.attendance == Attendance.Unattended || run.origin != RunOrigin.Ui) &&
             (risk.payment || risk.ask != null || risk.level == ActionRisk.Irreversible) -> Approval.Deny
         // Jarvis: sending a message, email or form (External) is read back to the user and needs a yes first,
         // when the user is at the phone. Runs that cannot ask (scheduled, channel, MCP, child) keep the old behaviour.
-        risk.level == ActionRisk.External && run.origin == RunOrigin.Ui && run.attendance != Attendance.Unattended -> Approval.Ask
+        confirmSends && risk.level == ActionRisk.External && run.origin == RunOrigin.Ui && run.attendance != Attendance.Unattended -> Approval.Ask
         !risk.payment && risk.ask == null -> Approval.Allow
         else -> Approval.Ask
     }

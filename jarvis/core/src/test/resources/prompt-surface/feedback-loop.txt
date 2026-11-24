@@ -81,6 +81,6 @@ Your last steps repeat the same cycle — open an item, act on it, go back — 3
 ### loop result 1.o2
 {"ok":false,"error":"parallel_tool_call_skipped","message":"Phone actions run one at a time. Observe the result of the first action, then try again."}
 ### loop result 1.c
-{"ok":false,"error":"invalid_arguments","message":"amount: required","recoverable":true}
+{"ok":false,"error":"invalid_arguments","message":"amount: required: the total the user will pay, as shown on screen. An action that spends no money needs no approval: do it directly","recoverable":true}
 ### loop result 2.c
-{"ok":false,"error":"invalid_arguments","message":"amount: required","recoverable":true}
+{"ok":false,"error":"invalid_arguments","message":"amount: required: the total the user will pay, as shown on screen. An action that spends no money needs no approval: do it directly","recoverable":true}

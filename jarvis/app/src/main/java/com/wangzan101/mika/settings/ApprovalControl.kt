@@ -14,6 +14,9 @@ class RunApproval(startAutonomous: Boolean) : ApprovalSettings {
 
     override fun autonomous(): Boolean = auto
 
+    /** Jarvis: in Ask mode, messages, emails and forms are read back to the user and sent only after a yes. */
+    override fun confirmSends(): Boolean = !auto
+
     fun set(autonomous: Boolean) {
         auto = autonomous
     }

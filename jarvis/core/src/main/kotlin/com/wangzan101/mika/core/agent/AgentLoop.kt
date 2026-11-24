@@ -430,6 +430,7 @@ class AgentLoop(
         offer.refresh()
         val guards = OperationGuards(maxSteps)
         val recorder = ActionRecorder(sink, clock, saveScreen = { id, png -> sink.media(id, png) })
+        tools.ctx.confirmSends = approvals::confirmSends
         val executor = ActionExecutor(tools, guards, confirmations, gate = ::awaitGate, recorder = recorder, offScreen = tools.offScreenGuard(), approvals = approvals,
             provenance = provenance,
             selfPackage = selfPackage, autonomous = autonomous, pacing = outwardPacing, onScreenAction = stages?.let { it::action })

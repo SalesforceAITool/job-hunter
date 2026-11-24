@@ -64,7 +64,7 @@ internal object RequestConfirmation : SurfaceAware {
             return fail("payment_requires_takeover", HINT_PAYMENT_TAKEOVER)
         }
         // Jarvis: sending and submitting are confirmed too and need no amount; other kinds still need the amount to pay
-        val needsAmount = kind != IrrevAction.send && kind != IrrevAction.submit
+        val needsAmount = !(ctx.confirmSends() && (kind == IrrevAction.send || kind == IrrevAction.submit))
         if (needsAmount && a.str("amount")?.any(Char::isDigit) != true) throw ArgError("amount",
             "required: the total the user will pay, as shown on screen. An action that spends no money needs no approval: do it directly")
         val app = ctx.confirmTarget(a.str("app")!!.trim())

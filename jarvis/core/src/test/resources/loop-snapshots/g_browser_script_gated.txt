@@ -1,15 +1,15 @@
 outcome: Failed(reason=下单需要用户确认,脚本没有执行, kind=GaveUp, code=null)
 
 ## main #1
-system: len=20253 #ca5c25d4 | You are Mika, the user's personal assistant on their phone. Your job is to get ⏎…
-tools: #ea09da13 [wait, ask_user, request_confirmation, end_not_done, phone_list_apps, phone_launch_app, phone_set_alarm, phone_set_timer, phone_add_calendar_event, phone_calendar_bulk_insert, web_navigate, web_read_page]
+system: len=20374 #f21dd53d | You are Mika, the user's personal assistant on their phone. Your job is to get ⏎…
+tools: #33e81c9c [wait, ask_user, request_confirmation, end_not_done, phone_list_apps, phone_launch_app, phone_set_alarm, phone_set_timer, phone_add_calendar_event, phone_calendar_bulk_insert, web_navigate, web_read_page]
 user:
   text #607a43dc | 搜一下再下单
   ctx:runtime_state source="runtime" #2e52308d | Current place: no screen or page read yet ⏎…
 
 ## main #2
-system: len=33775 #2fe1e821 | You are Mika, the user's personal assistant on their phone. Your job is to get ⏎…
-tools: #3a33feab [wait, ask_user, request_confirmation, end_not_done, view_past_screens, hand_to_user, handle_obstacle, phone_list_apps, phone_launch_app, phone_set_alarm, phone_set_timer, phone_add_calendar_event, phone_calendar_bulk_insert, web_observe, web_list_elements, web_tap, web_scroll, web_swipe, web_type_text, web_clear_text, web_back, web_press_key, web_diagnose, web_navigate, web_read_page, web_evaluate_js, web_tabs, web_downloads, web_upload, web_site_mode, web_script, web_interact, web_capture, web_wait_for, web_keep_open]
+system: len=33936 #50ce8fbb | You are Mika, the user's personal assistant on their phone. Your job is to get ⏎…
+tools: #4cd04efb [wait, ask_user, request_confirmation, end_not_done, view_past_screens, hand_to_user, handle_obstacle, phone_list_apps, phone_launch_app, phone_set_alarm, phone_set_timer, phone_add_calendar_event, phone_calendar_bulk_insert, web_observe, web_list_elements, web_tap, web_scroll, web_swipe, web_type_text, web_clear_text, web_back, web_press_key, web_diagnose, web_navigate, web_read_page, web_evaluate_js, web_tabs, web_downloads, web_upload, web_site_mode, web_script, web_interact, web_capture, web_wait_for, web_keep_open]
 … 1 messages unchanged
 assistant:
   call main_1 web_navigate {"url":"https://shop.example.com/"}
@@ -22,5 +22,5 @@ tool:
 assistant:
   call main_2 web_script {"code":"await mika.tap('@e1'); await mika.tap('@e2')"}
 tool:
-  result main_2 error #7ea3a257 | {"ok":false,"error":"confirmation_required","message":"mika.tap (action 4) stopped the script: this step spends money (提交订单). That action was not run, and the script stopped. Irreversible actions neve…
+  result main_2 error #a031b010 | {"ok":false,"error":"confirmation_required","message":"mika.tap (action 4) stopped the script: this step needs the user's approval first (提交订单). That action was not run, and the script stopped. Irreve…
   ctx:runtime_state source="runtime" #366cf011 | Current place: website shop.example.com (desktop version) ⏎…

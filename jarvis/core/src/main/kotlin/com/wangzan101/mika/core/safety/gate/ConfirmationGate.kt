@@ -83,7 +83,7 @@ class ConfirmationGate {
             step - g.step > MAX_STEPS -> "the approval expired ($MAX_STEPS steps)"
             hit.action != r.action -> "approved ${r.action.name} but this step is ${hit.action.name}"
             screen?.packageName == null || screen.packageName != r.app -> "approved in ${r.app} but the screen shows ${screen?.packageName ?: "unknown"}"
-            !targetShown(r, screen) && !(textless(screen) && seenShows(r, seen)) -> "the target \"${r.target}\" is not shown on the screen"
+            !targetShown(r, screen) && !(textless(screen) && seenShows(r, seen)) -> "the target \"${r.target}\" is not shown " + (if (r.action == IrrevAction.send) "in the title area or the recipient field" else "on the screen")
             r.action == IrrevAction.send && !contentMatches(r.content, screen, typing) && !(textless(screen) && seenShows(r, seen)) -> "the text to send is not exactly what was approved"
             amountBinds(hit, screen) && !amountShown(r.amount, screen, hit.matched) -> "the approved amount ${r.amount ?: "(none)"} is not on the screen"
             else -> return Permit.Allowed
@@ -140,10 +140,12 @@ class ConfirmationGate {
         val t = norm(r.target).take(MATCH_CHARS)
         if (t.length < 2) return false
         return s.elements.any { e ->
-            // Jarvis: an email recipient sits in the To field (an editable chip), not in a title bar, so for send
-            // the recipient may be anywhere on screen, editable or not
-            if (r.action == IrrevAction.send) t in norm(e.name)
-            else !e.editable && t in norm(e.name)
+            t in norm(e.name) && when {
+                r.action != IrrevAction.send -> !e.editable
+                // Jarvis: an email recipient sits in an editable To field; the message box itself does not count
+                e.editable -> !e.hint && norm(e.name) != norm(r.content.removeSuffix("…")) && !norm(e.name).startsWith(norm(r.content.removeSuffix("…")))
+                else -> e.bounds.size == 4 && e.bounds[1] <= TITLE_BAND
+            }
         }
     }
 
@@ -229,6 +231,8 @@ class ConfirmationGate {
         /** 同意后过了这么多步还没用就作废。 */
         const val MAX_STEPS = 3
         const val MATCH_CHARS = 20
+        /** 发送对象要在这条线(0–999)以上:屏幕顶部约 15% 的标题栏。 */
+        const val TITLE_BAND = 150
         private val NUMBER = Regex("\\d+(\\.\\d+)?")
         private val CURRENCY = Regex("[¥￥$＄]\\s*(\\d+(?:\\.\\d+)?)|(\\d+(?:\\.\\d+)?)\\s*元")
         private val THOUSANDS = Regex("(?<=\\d),(?=\\d{3}(?!\\d))")

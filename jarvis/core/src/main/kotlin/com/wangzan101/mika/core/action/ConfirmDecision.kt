@@ -122,7 +122,7 @@ class ConfirmDecision(
         fun audit(decision: String) {
             if (decision != "allowed" || risk.level.outward || risk.payment) recorder?.approval(origin, tool, asked, risk, decision)
         }
-        when (ApprovalPolicy.decide(risk, provenance)) {
+        when (ApprovalPolicy.decide(risk, provenance, approvals.confirmSends())) {
             Approval.Allow -> return null.also { audit("allowed") }
             Approval.Deny -> return Decision.Denied(asked).also { audit("denied") }
             Approval.Ask -> Unit
