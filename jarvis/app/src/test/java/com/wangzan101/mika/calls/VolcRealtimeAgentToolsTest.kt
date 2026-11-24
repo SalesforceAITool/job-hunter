@@ -174,9 +174,12 @@ class VolcRealtimeAgentToolsTest {
     @Test fun aNoticeEndsSpokenOnlyWhenItsResponseFinishes() = runBlocking {
         fixture {
             val session = connectAgent()
-            val collector = async { session.events.collect {} }
+            val audioStarted = Channel<Unit>(Channel.UNLIMITED)
+            val collector = async { session.events.collect { if (it is VolcRealtimeEvent.AssistantAudioStarted) audioStarted.trySend(Unit) } }
             // 上一句还在播:它播完不算这条汇报说完
             peer().send(audio(VolcRealtimeProtocol.AUDIO_STARTED, "r0"))
+            // wait until the client has handled r0 before handing over the notice (otherwise the two race on slow machines)
+            withTimeout(3_000) { audioStarted.receive() }
             val ends = Channel<Boolean>(4)
             assertTrue(session.sendNotice("订日料那件,办好了") { ends.trySend(it) })
             assertEquals("speech_text_buffer.commit", nextMessage().type)
