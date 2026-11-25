@@ -205,6 +205,11 @@ if cfg.get("append_original", True):
         s.append(KeepTogether(blk + bullets(items[:1]))); s += bullets(items[1:])
 
 out = cfg.get("out", "Akshay_Verma_Resume.pdf")
+try:                                                       # plain text for the ATS keyword check (jh/ats.py)
+    import textdump
+    textdump.dump(s, out)
+except Exception:
+    pass
 SimpleDocTemplate(out, pagesize=letter, leftMargin=0.6*inch, rightMargin=0.6*inch, topMargin=0.45*inch, bottomMargin=0.45*inch,
                   title="Akshay Kumar Verma - Resume", author="Akshay Kumar Verma").build(s)
 print(out)

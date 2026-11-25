@@ -179,6 +179,11 @@ def build(cfg: dict, out: str) -> str:
         canvas.drawCentredString(letter[0] / 2.0, letter[1] - 58, NAME)
         canvas.restoreState()
 
+    try:                                                   # plain text for the ATS keyword check (jh/ats.py)
+        import textdump
+        textdump.dump(s, out, extra=[NAME])
+    except Exception:
+        pass
     SimpleDocTemplate(out, pagesize=letter, leftMargin=72, rightMargin=72, topMargin=76, bottomMargin=60,
                       title="%s - Resume" % NAME, author=NAME).build(s, onFirstPage=header, onLaterPages=header)
     return out

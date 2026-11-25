@@ -179,7 +179,7 @@ TOOLS = [
     },
     {
         "name": "build_resume",
-        "description": "Portal lane: build the tailored resume PDF for a job and return its absolute path for the Chrome file upload tool.",
+        "description": "Build the tailored resume PDF for a job: returns resume_path (for the Chrome file upload tool) and `ats` = the JD's Salesforce keywords that are on the resume (matched), not on it (missing), and can_add (missing ones Akshay really has: add these and build again once). Use it before send_application too.",
         "inputSchema": {"type": "object", "properties": {
             "job_id": {"type": "integer"},
             "resume": RESUME_SCHEMA,
@@ -628,8 +628,25 @@ def call_tool(ctx, name, args):
         return res, bool(isinstance(res, dict) and not res.get("ok"))
 
     if name == "build_resume":
-        path = a.build_resume_only(conn, _int(args.get("job_id"), "job_id"), _norm_resume(args.get("resume")))
-        return {"resume_path": str(path)}, False
+        job_id = _int(args.get("job_id"), "job_id")
+        path = a.build_resume_only(conn, job_id, _norm_resume(args.get("resume")))
+        out = {"resume_path": str(path)}
+        try:      # 25 Nov: ATS keyword check of the JD against what the resume printed (no AI)
+            import jh.ats as ats
+            txt = Path(re.sub(r"\.pdf$", "", str(path), flags=re.I) + ".txt")
+            row = conn.execute("SELECT jd_text FROM jobs WHERE id=?", (job_id,)).fetchone()
+            jd = (row["jd_text"] if row else "") or ""
+            if txt.is_file() and len(jd) > 80:
+                cov = out["ats"] = ats.coverage(jd, txt.read_text(encoding="utf-8"), ctx.cfg())
+                if cov["jd_terms"]:
+                    a.log_step(conn, rid, lane, "Resume keywords: %d of %d JD keywords on the resume%s%s"
+                               % (len(cov["matched"]), cov["jd_terms"],
+                                  ("; can add: " + ", ".join(cov["can_add"])) if cov["can_add"] else "",
+                                  ("; not his: " + ", ".join(t for t in cov["missing"] if t not in cov["can_add"]))
+                                  if len(cov["missing"]) > len(cov["can_add"]) else ""))
+        except Exception as e:
+            out["ats_error"] = str(e)[:120]
+        return out, False
 
     if name == "save_portal_prefill":
         ql = args.get("questions_left") or []
