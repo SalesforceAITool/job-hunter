@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write  # to publish the APK as the "jarvis-latest" release (fixed download link)
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -68,6 +68,17 @@ jobs:
             echo "## Jarvis APK"
             echo "Download the Jarvis artifact below, unzip it, and install the APK on the phone."
           } >> "$GITHUB_STEP_SUMMARY"
+      - name: Publish APK at a fixed link (release jarvis-latest)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cp "dist/Jarvis-${GITHUB_SHA::7}.apk" dist/Jarvis.apk
+          gh release delete jarvis-latest --yes --cleanup-tag || true
+          gh release create jarvis-latest dist/Jarvis.apk \
+            --target "$GITHUB_SHA" --prerelease --title "Jarvis (latest build ${GITHUB_SHA::7})" \
+            --notes "Latest Jarvis APK from branch ${GITHUB_REF_NAME}. Install: open this page on the phone, tap Jarvis.apk. Setup steps: jarvis/JARVIS_SETUP.md"
+          echo "Direct download: https://github.com/${GITHUB_REPOSITORY}/releases/download/jarvis-latest/Jarvis.apk" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
           name: Jarvis-${{ github.sha }}

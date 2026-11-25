@@ -4,10 +4,10 @@ Jarvis is built on the open-source app [Mika](https://github.com/wangzan101/Mika
 What's different from Mika: **before sending an email, WhatsApp message or form, it asks you first** (recipient + exact text), and sends only after you say yes.
 
 ## 1. Download the APK
-1. On the phone, open: github.com/SalesforceAITool/job-hunter/actions → **Jarvis APK** → latest green run.
-2. At the bottom, under **Artifacts**, download `Jarvis-...` (requires GitHub login), then unzip it.
-3. Before installing: Settings → Security and privacy → **Auto Blocker → Off** (otherwise Samsung blocks the APK).
-4. Install the `.apk` (allow "Install unknown apps" when asked).
+1. Before installing: Settings → Security and privacy → **Auto Blocker → Off** (otherwise Samsung blocks the APK).
+2. In Chrome on the phone, open this link: **https://github.com/SalesforceAITool/job-hunter/releases/download/jarvis-latest/Jarvis.apk**
+3. Once downloaded, tap the notification (or My Files → Downloads → `Jarvis.apk`).
+4. If it says "Install unknown apps", allow Chrome/My Files → **Install**.
 
 > Updates: until the `JARVIS_DEBUG_KEYSTORE_B64` secret is added in GitHub, each new build has a new key,
 > so to update you have to uninstall the old app and install the new one (settings are lost). Once the secret is added, updates install directly.
