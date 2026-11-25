@@ -3,6 +3,7 @@
 // window.__jh.fill({k: v})  -> fills them all in one go; returns "k:ok" / "k:miss(...)" per field
 // window.__jh.next()        -> clicks Next / Continue / Review (NEVER Submit); returns what it clicked
 // window.__jh.page(n)       -> next chunk of read() when the list was cut ("more" in the result)
+// await window.__jh.resumeInput() -> puts LinkedIn's resume file input where `find` sees it (label "JH resume file input")
 (() => {
   function* roots(r) { yield r; for (const el of r.querySelectorAll('*')) { if (el.shadowRoot) yield* roots(el.shadowRoot);
     if (el.tagName === 'IFRAME') { try { if (el.contentDocument) yield* roots(el.contentDocument); } catch (e) {} } } }
@@ -126,6 +127,45 @@
     if (/submit|send|apply$/i.test(t)) return 'REFUSED: ' + t;      // never submit from the prefill lane
     b.click();
     return 'clicked: ' + t;
+  };
+  // 25 Nov: LinkedIn has no file input on the resume step until "Upload resume" is pressed; the page then makes one
+  // and calls click() on it. Catch that input instead of letting a file picker open (no native dialog, ever), put it
+  // in the page with a label, and the AI hands it the tailored PDF with file_upload.
+  H.resumeInput = async function () {
+    const mark = el => {
+      if (!el.isConnected) (modal() || document.body).appendChild(el);
+      el.classList.remove('hidden', 'visually-hidden');
+      el.style.cssText = 'display:block !important;visibility:visible !important;opacity:1 !important;position:static !important;width:220px;height:32px;';
+      el.setAttribute('aria-label', 'JH resume file input');
+      H.fileInput = el;
+      return el;
+    };
+    const find = () => { for (const r of roots(document)) { const c = r.querySelector('input[type="file"]'); if (c) return c; } return null; };
+    let inp = find();
+    if (inp) return { found: true, how: 'existing', accept: inp.accept || '', id: mark(inp).id || '' };
+    const P = HTMLInputElement.prototype, oc = P.click, os = P.showPicker, ofp = window.showOpenFilePicker;
+    let got = null, fsApi = false;
+    P.click = function () { if (this.type === 'file') { got = this; return; } return oc.apply(this, arguments); };
+    if (os) P.showPicker = function () { if (this.type === 'file') { got = this; return; } return os.apply(this, arguments); };
+    if (ofp) window.showOpenFilePicker = function () { fsApi = true; return Promise.reject(new DOMException('Job Hunter', 'AbortError')); };
+    let btn = null;
+    try {
+      const m = modal();
+      const scope = m ? [m] : [...roots(document)];
+      for (const r of scope) {
+        btn = [...r.querySelectorAll('button, label, [role="button"]')].find(x => /^upload resume$|^upload$|upload (a )?(new )?resume/i.test(T(x.getAttribute('aria-label') || x.innerText)));
+        if (btn) break;
+      }
+      if (btn) {
+        btn.click();
+        for (let i = 0; i < 20 && !got && !find(); i++) await new Promise(r => setTimeout(r, 100));
+      }
+    } finally {
+      P.click = oc; if (os) P.showPicker = os; if (ofp) window.showOpenFilePicker = ofp;
+    }
+    inp = got || find();
+    if (inp) return { found: true, how: got ? 'caught' : 'appeared', accept: inp.accept || '', id: mark(inp).id || '' };
+    return { found: false, why: !btn ? 'no Upload resume button' : (fsApi ? 'page uses the File System Access picker' : 'no file input after Upload resume') };
   };
   return 'ready';
 })();

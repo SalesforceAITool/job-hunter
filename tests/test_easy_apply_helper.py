@@ -37,6 +37,48 @@ class FormHelperTests(unittest.TestCase):
             self.assertTrue(pg.evaluate("window.__jh.next()").startswith("NO_NEXT"))   # final page: Submit is never clicked
             b.close()
 
+    def test_resume_input_is_caught_without_a_file_picker(self):
+        """25 Nov: LinkedIn makes the resume file input only when Upload resume is pressed (10 of 10 uploads failed)."""
+        import tempfile
+        js = engine.form_helper_js()
+        with sync_playwright() as p:
+            try:
+                b = p.chromium.launch()
+            except Exception as e:
+                self.skipTest("no chromium: %s" % e)
+            pg = b.new_page()
+            pickers = []
+            pg.on("filechooser", lambda fc: pickers.append(fc))
+            pg.goto((FIXTURE.parent / "easy_apply_resume.html").as_uri())
+            self.assertEqual(pg.evaluate(js), "ready")
+            res = pg.evaluate("window.__jh.resumeInput()")
+            self.assertEqual((res["found"], res["how"]), (True, "caught"), res)
+            self.assertEqual(pg.evaluate("window.pickerCalls"), 1)
+            self.assertEqual(pickers, [])                        # no native file picker was opened
+            with tempfile.TemporaryDirectory() as d:
+                pdf = Path(d) / "Akshay_Verma_Resume.pdf"
+                pdf.write_bytes(b"%PDF-1.4 test")
+                pg.get_by_label("JH resume file input").set_input_files(str(pdf))
+            self.assertEqual(pg.evaluate("window.uploaded"), ["Akshay_Verma_Resume.pdf"])   # LinkedIn's own handler ran
+            # the page's click() works normally again for everything else
+            self.assertTrue(pg.evaluate("HTMLInputElement.prototype.click.toString().includes('native code')"))
+            # second call on the same page: the input is there now
+            self.assertEqual(pg.evaluate("window.__jh.resumeInput()")["how"], "existing")
+            b.close()
+
+    def test_resume_input_reports_why_when_missing(self):
+        js = engine.form_helper_js()
+        with sync_playwright() as p:
+            try:
+                b = p.chromium.launch()
+            except Exception as e:
+                self.skipTest("no chromium: %s" % e)
+            pg = b.new_page()
+            pg.set_content("<div role='dialog'>Easy Apply Resume <button>Next</button></div>")
+            pg.evaluate(js)
+            self.assertEqual(pg.evaluate("window.__jh.resumeInput()"), {"found": False, "why": "no Upload resume button"})
+            b.close()
+
 
 if __name__ == "__main__":
     unittest.main()

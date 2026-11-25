@@ -1,0 +1,22 @@
+<!doctype html><html><body>
+<!-- LinkedIn-like Easy Apply resume step (25 Nov): the modal sits in a shadow root and there is NO file input until
+     "Upload resume" is pressed; the page then creates one, wires its change handler and calls click() on it. -->
+<div id="interop-outlet"></div>
+<script>
+window.uploaded = []; window.pickerCalls = 0;
+const host = document.getElementById('interop-outlet');
+const root = host.attachShadow({mode: 'open'});
+root.innerHTML = `<div role="dialog" class="artdeco-modal jobs-easy-apply-modal">
+  <h2>Apply to Strong Point</h2><h3>Resume</h3>
+  <p>Select or upload a resume in DOC, DOCX, or PDF format</p>
+  <div class="resume-card">Akshay_Kumar_Verma_Resume 1.pdf</div>
+  <button id="up" aria-label="Upload resume"><span>Upload resume</span></button>
+  <button aria-label="Continue to next step">Next</button></div>`;
+root.getElementById('up').addEventListener('click', () => {
+  const i = document.createElement('input');
+  i.type = 'file'; i.accept = '.pdf,.doc,.docx';
+  i.addEventListener('change', () => { window.uploaded.push(...[...i.files].map(f => f.name)); });
+  window.pickerCalls++;
+  i.click();
+});
+</script></body></html>

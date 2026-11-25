@@ -28,24 +28,11 @@ Goal: for remote Salesforce jobs that have LinkedIn **Easy Apply**, open the Eas
    4. ONE `report_questions` for the unknown ones, ONE `record_answers` for what you filled.
    5. `window.__jh.next()` → clicks Next/Continue/Review (it refuses Submit). `NO_NEXT` = you are on the final page.
    Only if `read()` says `NO_MODAL` or the helper fails twice, fall back to `find` + `form_input`. Rules for the values: keep LinkedIn's pre-filled name and phone if they match, but the **email must be akshay.verma0031@gmail.com** (change LinkedIn's pre-filled address if it shows another one), and on the resume step upload the PDF from step 4 (see **Resume upload** below; if it still fails, select his most recent resume already on LinkedIn and add "check resume: tailored PDF upload failed" to `questions_left`). Click Next/Continue/Review until you reach **Review your application** or a step with a required question you must leave blank. Then STOP — do not click Submit.
-   **Resume upload (LinkedIn puts the Easy Apply modal inside a shadow DOM, so `document.querySelector` and a plain `find` don't see the file input — it IS there, hidden, before any click):**
-   1. Run with `javascript_tool` (never click "Upload resume" — that opens a native file picker that blocks Chrome automation):
-```js
-// walks the page, every (nested) open shadow root and same-origin iframes
-function* walk(root){ yield root; for (const el of root.querySelectorAll('*')) { if (el.shadowRoot) yield* walk(el.shadowRoot);
-  if (el.tagName==='IFRAME') { try { if (el.contentDocument) yield* walk(el.contentDocument); } catch(e){} } } }
-let inp=null, roots=0;
-for (const r of walk(document)) { roots++; const c=r.querySelector('input[type="file"]'); if (c) { inp=c; break; } }
-if (inp){
-  inp.classList.remove('hidden','visually-hidden');
-  inp.style.cssText='display:block !important;visibility:visible !important;opacity:1 !important;position:static !important;width:220px;height:32px;';
-  inp.setAttribute('aria-label','JH resume file input');
-}
-({found:!!inp, roots, id:inp&&inp.id, accept:inp&&inp.accept, inShadow:!!(inp&&inp.getRootNode()!==document)})
-```
-   2. `find` "JH resume file input" (or `read_page` with filter interactive). If the script said `found:false`, still try `find` "file upload input for resume" and `read_page` (filter all) once — the extension's accessibility tree can reach inputs the script can't. Take the input's `ref` → `mcp__claude-in-chrome__file_upload` with `paths: [resume_path from build_resume]` and that `ref`.
-   3. Wait 3 s, `computer screenshot`: the modal should list **Akshay_Verma_Resume.pdf** as the selected resume (its radio/card selected). If an older resume is still selected, click the new one's card (not the Upload button).
-   4. `found:false` or the upload tool refuses the path → fallback above (keep his latest LinkedIn resume + note in `questions_left`).
+   **Resume upload (25 Nov: LinkedIn makes the file input only when "Upload resume" is pressed, so it is never in the page before; the helper catches it without opening a file picker):**
+   1. `await window.__jh.resumeInput()` with `javascript_tool` (the helper must be loaded on this page). Never click "Upload resume" yourself — a real click opens a native file picker that blocks Chrome automation; the helper presses it in a way that cannot open one.
+   2. `found:true` → `find` "JH resume file input" → take its `ref` → `mcp__claude-in-chrome__file_upload` with `paths: [resume_path from build_resume]` and that `ref`. `found:false` → `log_step` its `why` and go to the fallback.
+   3. Wait 3 s, `computer screenshot`: the modal should list **Akshay_Verma_Resume.pdf** dated today as the selected resume. If an older resume is still selected, click the new one's card (not the Upload button).
+   4. `found:false` or the upload tool refuses the path → fallback above (keep his latest LinkedIn resume + note in `questions_left`, with the reason: `check resume: tailored PDF upload failed (<why / the tool's error>)`).
 
 6. `mcp__jobhunt__save_portal_prefill(job_id, ats="linkedin_easy_apply", apply_url="https://www.linkedin.com/jobs/view/<id>/", resume, questions_left, ready)`.
    - `ready: true` only when you are on the final **Review your application** page (or a single-page form's Submit page) and **no required field is blank** (required "consent: …" boxes don't count — they are ticked at submit time). Akshay can then approve it with one click and the submit lane sends it.
