@@ -97,14 +97,24 @@ class BuildCommandTest(unittest.TestCase):
         i = argv.index("--disallowedTools")
         j = next(k for k in range(i + 1, len(argv)) if argv[k].startswith("-"))
         denied = argv[i + 1:j]
-        for t in ("Agent", "Bash", "Read", "Write", "Edit", "Glob", "Grep", "WebFetch", "WebSearch"):
+        for t in ("Agent", "Bash", "Write", "Edit", "Glob", "Grep", "WebFetch", "WebSearch"):
             self.assertIn(t, denied)
+        # 27 Nov: Read is not denied outright (Chrome file_upload needs the tailored resume readable): the engine runs
+        # in an empty folder, only data/resumes is readable, config.json and the database are denied by name
+        self.assertNotIn("Read", denied)
+        self.assertTrue(any(d.startswith("Read(") and d.endswith("config.json)") for d in denied))
+        self.assertTrue(any(d.startswith("Read(") and d.endswith("jobhunter.db)") for d in denied))
+        k = argv.index("--allowedTools")
+        allowed = argv[k + 1:next(x for x in range(k + 1, len(argv)) if argv[x].startswith("-"))]
+        self.assertIn("mcp__jobhunt__*", allowed)
+        self.assertTrue(any(a.startswith("Read(") and a.endswith("resumes/**)") for a in allowed))
+        self.assertEqual(argv.count("--allowedTools"), 1)
         self.assertEqual(argv.count("--disallowedTools"), 1)
         self.assertEqual(denied.count("Agent"), 1)
         self.assertIn("--strict-mcp-config", argv)
         # no flag at all in config -> added before --mcp-config, which stays last
         argv2, _ = self.build({"engine": {"claude_path": str(self.fake_claude), "claude_args": ["--chrome"]}})
-        self.assertIn("Read", argv2[argv2.index("--disallowedTools") + 1:argv2.index("--mcp-config")])
+        self.assertIn("Bash", argv2[argv2.index("--disallowedTools") + 1:argv2.index("--mcp-config")])
         self.assertEqual(argv2[-2], "--mcp-config")
         self.assertEqual(argv2[2], engine.KICKOFF.format(lane="jobright"))
 

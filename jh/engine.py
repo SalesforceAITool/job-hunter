@@ -73,8 +73,13 @@ DEFAULT_CLAUDE_ARGS = [
 # Built-in tools the engine never needs. Job pages/posts are untrusted input (prompt injection), and the
 # engine's cwd is the data dir holding config.json with the Gmail app password, so file/shell/web tools
 # are always denied - merged into --disallowedTools even when config.json carries older claude_args.
-FORBIDDEN_TOOLS = ["Agent", "Task", "Bash", "BashOutput", "KillShell", "Read", "Write", "Edit", "MultiEdit",
+FORBIDDEN_TOOLS = ["Agent", "Task", "Bash", "BashOutput", "KillShell", "Write", "Edit", "MultiEdit",
                    "NotebookEdit", "Glob", "Grep", "LS", "WebFetch", "WebSearch"]
+# 27 Nov: "Read" is no longer denied outright - the Chrome file_upload tool refuses any file the session may not read,
+# and a blanket Read deny made every tailored-resume upload fail ("only files this session is allowed to read can be
+# uploaded", 5 of 5 since 25 Nov). Instead the engine now runs in an EMPTY folder (engine_cwd) with only the resumes
+# folder added, so Read reaches nothing else; config.json / the database are denied by name as well.
+SANDBOX_DIR = "engine_cwd"
 
 # Env vars that must never reach the child (SPEC §15). CLAUDECODE is dropped so a
 # nested launch (app started from inside a Claude Code session) is not refused.
@@ -182,6 +187,50 @@ def _strip_flag(args, flag, nvals=1):
         out.append(args[i])
         i += 1
     return out
+
+
+def _drop_disallowed(args, tool):
+    """Remove one tool name from the --disallowedTools list (config.json may still carry an old list)."""
+    out = list(args)
+    for flag in ("--disallowedTools", "--disallowed-tools"):
+        if flag in out:
+            i = j = out.index(flag) + 1
+            while j < len(out) and not out[j].startswith("-"):
+                j += 1
+            vals = [t for v in out[i:j] for t in v.replace(",", " ").split() if t != tool]
+            out[i:j] = vals
+    return out
+
+
+def engine_cwd(data_dir):
+    """The engine's working folder: an empty folder inside the data dir (Read can't reach config.json from here)."""
+    p = Path(data_dir) / SANDBOX_DIR
+    try:
+        p.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        return Path(data_dir)
+    return p
+
+
+def _abs_rule(path):
+    """Permission-rule path for an absolute file/folder ('//C:/Users/...' on Windows, '//home/...' elsewhere)."""
+    p = str(path).replace("\\", "/")
+    return "/" + p if p.startswith("/") else "//" + p
+
+
+def _merge_flag_values(args, flag, values):
+    """Append values to an existing variadic flag (one flag, never repeated), or add the flag at the end."""
+    out = list(args)
+    names = (flag, "--allowed-tools") if flag == "--allowedTools" else (flag,)
+    for f in names:
+        if f in out:
+            i = j = out.index(f) + 1
+            while j < len(out) and not out[j].startswith("-"):
+                j += 1
+            have = {t.strip() for v in out[i:j] for t in v.replace(",", " ").split()}
+            out[j:j] = [v for v in values if v not in have]
+            return out
+    return out + [flag] + list(values)
 
 
 def _merge_disallowed(args, tools):
@@ -482,7 +531,11 @@ def build_command(lane, cfg, prompt_path, data_dir, run_id=None, extra_args=None
         user_args = _strip_flag(user_args, f)
     user_args = [a for a in user_args if a not in ("-p", "--print", "--verbose")]
     user_args = _strip_flag(user_args, "--dangerously-skip-permissions", 0)
-    user_args = _merge_disallowed(user_args, FORBIDDEN_TOOLS)
+    user_args = _merge_disallowed(_drop_disallowed(user_args, "Read"), FORBIDDEN_TOOLS)
+    # the tailored-resume folder is readable (Chrome file_upload); the secrets never are (deny wins over allow)
+    user_args = _merge_flag_values(user_args, "--allowedTools", ["Read(%s/**)" % _abs_rule(data_dir / "resumes")])
+    user_args = _merge_disallowed(user_args, ["Read(%s)" % _abs_rule(data_dir / n) for n in
+                                              ("config.json", "jobhunter.db", "jobhunter.db-wal", "config.json.bak")])
     model = lane_model(cfg, lane)
     if model and "--model" not in user_args:
         user_args += ["--model", model]
@@ -1091,7 +1144,7 @@ def run_lane(run_id, lane, cfg, emit, stop):
         log_path = data_dir / "logs" / ("engine_%s_%s_%s.jsonl" % (run_id if run_id is not None else "x", lane, stamp))
         emit(lane, "step", "Starting AI engine%s" % (" (mock)" if is_mock(cfg) else ""), "info",
              {"argv0": os.path.basename(argv[0])})
-        rc, reason, tail = _run_stream(argv, env, data_dir, on_line, stop=stop,
+        rc, reason, tail = _run_stream(argv, env, engine_cwd(data_dir), on_line, stop=stop,
                                        timeout_s=timeout_min * 60, log_path=log_path, on_stderr=on_err)
         if rc in CRASH_CODES and reason is None and not final and not (stop and stop.is_set()):
             # claude.exe crashed natively (seen when several lanes share one Chrome). Everything the lane
@@ -1099,7 +1152,7 @@ def run_lane(run_id, lane, cfg, emit, stop):
             emit(lane, "warning", "AI engine crashed (Windows code 0x%08X) — restarting it once" % (rc & 0xFFFFFFFF), "warn",
                  {"returncode": rc})
             log_path = data_dir / "logs" / ("engine_%s_%s_%s_retry.jsonl" % (run_id if run_id is not None else "x", lane, stamp))
-            rc, reason, tail = _run_stream(argv, env, data_dir, on_line, stop=stop,
+            rc, reason, tail = _run_stream(argv, env, engine_cwd(data_dir), on_line, stop=stop,
                                            timeout_s=timeout_min * 60, log_path=log_path, on_stderr=on_err)
         counts.update(state.counts)
         res["counts"] = counts
@@ -1202,7 +1255,7 @@ def engine_smoke_test(cfg, timeout_s=120):
         add("claude_found", False, str(e))
         return {"ok": False, "checks": checks}
     log_path = data_dir / "logs" / "engine_smoke.jsonl"
-    rc, reason, tail = _run_stream(argv, env, data_dir, on_line, stop=None, timeout_s=timeout_s, log_path=log_path)
+    rc, reason, tail = _run_stream(argv, env, engine_cwd(data_dir), on_line, stop=None, timeout_s=timeout_s, log_path=log_path)
 
     r = state.result or {}
     if not any(c["id"] == "auth" for c in checks):
