@@ -1341,7 +1341,7 @@
     if (v === 'agencies') { if (S.agencies) renderAgencies(); loadAgencies(!!S.agencies); }
     if (v === 'board') { renderBoard(); loadBoard(!!S.board); }
   }
-  const APP_BUILD = '2026-11-25.1';   // must match jh/__init__.py BUILD
+  const APP_BUILD = '2026-11-27.1';   // must match jh/__init__.py BUILD
   async function checkBuild() {
     let b = null;
     try { const r = await fetch('/api/version', { cache: 'no-store' }); if (r.ok) b = (await r.json()).build; } catch (e) { return; }
@@ -2520,6 +2520,7 @@
           h('input', { type: 'number', id: 'f-max_emails', min: '0', max: '500', step: '1', value: val('max_emails') != null ? String(val('max_emails')) : '25' }),
           h('div', { class: 'help' }, 'The run stops sending new applications after this many. Nudges are not counted.')),
       ]),
+      accountsFieldset(cfg),
       reportFieldset(cfg),
       fs('Runs', null, [
         toggleRow('f-auto_run', 'Start a run when Job Hunter opens', 'Double-clicking the Desktop icon opens the dashboard and starts right away.', val('auto_run') == null ? true : !!val('auto_run')),
@@ -2609,6 +2610,20 @@
     if (v('apollo') && v('apollo').value.trim()) ef.apollo_api_key = v('apollo').value.trim();
     if (v('finder_cap')) ef.daily_cap = Math.max(0, Math.min(500, Math.round(num(v('finder_cap').value, 25))));
     out.email_finder = ef;
+    if ($('#acct-list')) {
+      const em = Object.assign({}, out.email || {});
+      em.accounts = [...document.querySelectorAll('#acct-list .acct-row')].map(r => {
+        const a = { address: r.querySelector('.acct-addr').value.trim().toLowerCase() };
+        const pw = r.querySelector('.acct-pw').value.replace(/\s+/g, '');
+        const old = (get(S.settings, 'email.accounts') || []).find(x => x.address === a.address);
+        a.app_password = pw || (old ? old.app_password : '');    // the masked value keeps the saved password
+        const cap = Math.round(num(r.querySelector('.acct-cap').value, 0));
+        if (cap > 0) a.daily_cap = Math.min(100, cap);
+        return a;
+      }).filter(a => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(a.address));
+      if ($('#f-legacy')) em.legacy_address = $('#f-legacy').value.trim().toLowerCase();
+      out.email = em;
+    }
     if (v('report_on') || v('report_to') || v('report_hour')) {
       const dr = Object.assign({}, out.daily_report || {});
       if (v('report_on')) dr.on = v('report_on').checked;
@@ -2636,6 +2651,33 @@
       loadEnv();
     } catch (e) { st.textContent = 'Not saved: ' + (e.message || 'error'); st.style.color = 'var(--bad)'; }
     finally { btn.disabled = false; }
+  }
+  // 27 Nov: more Gmail accounts. Replies are read in every inbox listed here (nobody who answered gets a nudge), a
+  // follow-up goes out from the account that sent the first email, and new emails are spread over the accounts with a
+  // small daily cap each (spaced out, paused for a day when Gmail says "limit").
+  function accountsFieldset(cfg) {
+    const list = h('div', { id: 'acct-list' });
+    const row = a => {
+      const saved = !!(a && a.app_password_set);
+      const del = h('button', { class: 'btn btn-sm btn-ghost', type: 'button' }, 'Remove');
+      const r = h('div', { class: 'field-row acct-row', style: { gap: '6px', flexWrap: 'wrap', marginBottom: '6px' } },
+        h('input', { type: 'email', class: 'acct-addr', value: str(a && a.address), placeholder: 'another@gmail.com', spellcheck: 'false', style: { width: '220px' } }),
+        h('input', { type: 'password', class: 'acct-pw', autocomplete: 'new-password', placeholder: saved ? 'Saved — type to replace' : '16-character app password', style: { width: '200px' } }),
+        h('input', { type: 'number', class: 'acct-cap', min: '0', max: '100', value: a && a.daily_cap ? String(a.daily_cap) : '', placeholder: 'per day', title: 'Emails per day from this account (empty = 25; new accounts start at 12)', style: { width: '80px' } }),
+        del);
+      del.onclick = () => r.remove();
+      return r;
+    };
+    (get(cfg, 'email.accounts') || []).forEach(a => list.appendChild(row(a)));
+    const add = h('button', { class: 'btn btn-sm', type: 'button' }, 'Add Gmail account');
+    add.onclick = () => { if (list.children.length < 6) list.appendChild(row(null)); };
+    return fs('Other Gmail accounts', 'Replies are read in every inbox here, and a follow-up always goes from the account that sent the first email. New emails are spread over the accounts, spaced out, with a small daily cap each.', [
+      list,
+      h('div', { class: 'field-row' }, add),
+      h('div', { class: 'field' }, h('label', { for: 'f-legacy' }, 'Gmail that sent applications before 10 Nov'),
+        h('input', { type: 'email', id: 'f-legacy', value: str(get(cfg, 'email.legacy_address')), placeholder: 'older@gmail.com', spellcheck: 'false' }),
+        h('div', { class: 'help' }, 'Follow-ups for those older threads go from this account once it is added above with its app password.')),
+    ]);
   }
   // Daily report email (Akshay, 11 Nov): applications submitted + recruiter emails sent, once a day
   function reportFieldset(cfg) {
