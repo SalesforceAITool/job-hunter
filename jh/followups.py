@@ -4,7 +4,7 @@ Schedule: nudge1 when >=1 business day (Mon-Fri) since the initial email with no
 nudge2 when >=3 business days since nudge1, then the sequence is done.
 """
 import re
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from . import config, db, mailer
 from . import replies as replies_mod
@@ -370,6 +370,7 @@ def run_followups(conn, run_id, cfg, emit_fn=None, stop_event=None, today=None) 
         return counts
     try:
         sendguard.fix_limit_bounces(conn)
+        sendguard.fix_limit_bounces_again(conn)
     except Exception as e:
         log_warn = "limit-bounce repair failed: %s" % e
         emit(LANE, "warning", log_warn, "warn")
@@ -385,8 +386,12 @@ def run_followups(conn, run_id, cfg, emit_fn=None, stop_event=None, today=None) 
         try:
             with mailer.mailbox(acfg) as mb:
                 try:
-                    for b in mb.find_bounces(14):   # 27 Nov: 7 days missed bounces between runs
-                        if b.get("limit"):
+                    bounces = mb.find_bounces(14)   # 27 Nov: 7 days missed bounces between runs
+                    burst = _limit_bursts(bounces)
+                    for i, b in enumerate(bounces):
+                        # Gmail's limit notices come as a burst of "failures" within a minute or two (26 Nov: 9 at
+                        # 14:39-14:40 for valid addresses); the outbox spaces sends out, so real bounces never do
+                        if b.get("limit") or i in burst:
                             _mark_limit(conn, cfg, acct, b, emit, counts)
                         else:
                             _mark_bounce(conn, b, emit, counts)
@@ -519,100 +524,39 @@ def _mark_limit(conn, cfg, acct, b, emit, counts):
     if sendguard._get(conn, key):
         return
     sendguard._set(conn, key, db.now_iso())
-    sendguard.pause(conn, acct["address"], sendguard.opts(cfg)["limit_pause_h"], "Gmail limit notice: " + (b.get("subject") or ""))
+    hours = sendguard.opts(cfg)["limit_pause_h"]
+    when = db.parse_ts(b.get("date")) or db.now()
+    # the pause counts from the notice, not from when Job Hunter read it (an old notice pauses nothing now)
+    until_s = when.timestamp() + 3600 * float(hours)
+    if until_s > db.now().timestamp():
+        sendguard.pause(conn, acct["address"], (until_s - db.now().timestamp()) / 3600.0,
+                        "Gmail limit notice: " + (b.get("subject") or ""))
     counts["limit_notices"] = counts.get("limit_notices", 0) + 1
     if not addr:
         return
-    since = (db.now() - timedelta(days=3)).replace(microsecond=0).isoformat()
+    # the message that hit the limit: sent from this account to this address within 15 minutes before the notice
+    lo = (when - timedelta(minutes=15)).replace(microsecond=0).isoformat()
+    hi = (when + timedelta(minutes=1)).replace(microsecond=0).isoformat()
     row = conn.execute("SELECT e.id, e.kind FROM emails e JOIN contacts c ON c.id=e.contact_id WHERE lower(trim(c.email))=?"
-                       " AND e.status='sent' AND e.sent_at>=? ORDER BY e.sent_at DESC, e.id DESC LIMIT 1",
-                       (addr, since)).fetchone()
-    if row:
+                       " AND e.status IN ('sent','bounced') AND e.sent_at>=? AND e.sent_at<=? ORDER BY e.sent_at DESC, e.id DESC"
+                       " LIMIT 1", (addr, lo, hi)).fetchone()
+    if row and until_s > db.now().timestamp() - 3 * 86400:
         conn.execute("UPDATE emails SET status='sending', queued=1, sender=?, next_try=?, error=? WHERE id=?",
-                     (acct["address"], (db.now() + timedelta(hours=24)).replace(microsecond=0).isoformat(),
+                     (acct["address"], datetime.fromtimestamp(until_s, db.IST).replace(microsecond=0).isoformat(),
                       "Gmail limit notice: sent again later", row["id"]))
-    emit(LANE, "warning", "Gmail limit notice for %s from %s: account paused for a day, the message goes out again later"
-         % (addr or "?", acct["address"]), "warn", {"email": addr, "account": acct["address"]})
+    emit(LANE, "warning", "Gmail limit notice for %s (sent from %s): not a dead address%s"
+         % (addr or "?", acct["address"], "; the message goes out again later" if row else ""), "warn",
+         {"email": addr, "account": acct["address"]})
 
-    emit(LANE, "step", "Checking %d open threads for replies and bounces" % len(threads))
-    try:
-        with mailer.mailbox(cfg) as mb:
-            try:
-                for b in mb.find_bounces(14):   # 27 Nov: 7 days missed bounces between runs
-                    _mark_bounce(conn, b, emit, counts)
-            except Exception as e:  # bounce check failure shouldn't block replies/nudges
-                counts["errors"] += 1
-                emit(LANE, "warning", "Bounce check failed: %s" % e, "warn")
-            if counts["bounces"]:
-                ids = [t["contact_id"] for t in threads]
-                threads = [t for t in db.load_threads(conn, ids).values()
-                           if t["app_status"] in ("sent", "nudge1", "nudge2")]
-            for t in threads:
-                if stopped():
-                    emit(LANE, "warning", "Stopped by user", "warn")
-                    break
-                counts["checked"] += 1
-                try:
-                    msgs = mb.find_replies(t["email"], t["sent_at"])
-                    if _record_replies(conn, t, msgs, emit, counts, mb, cfg):
-                        continue
-                    if not t["next_followup"] or t["next_followup"] > today:
-                        continue
-                    # someone else on this job already answered (HR replied -> don't chase the manager)
-                    if conn.execute("SELECT 1 FROM jobs WHERE id=? AND status='replied'", (t["job_id"],)).fetchone():
-                        continue
-                    counts["nudges_due"] += 1
-                    kind = t["next_kind"]
-                    if dry:
-                        emit(LANE, "step", "[dry run] would send %s to %s (%s)" % (kind, t["email"], t["company"]),
-                             "info", {"contact_id": t["contact_id"], "kind": kind, "dry_run": True})
-                        continue
-                    orig_id, orig_subject = _original(conn, mb, t)
-                    if not orig_id:
-                        counts["nudges_skipped"] += 1
-                        emit(LANE, "warning", "Skipped %s to %s: original email not found in Sent Mail"
-                             % (kind, t["email"]), "warn", {"contact_id": t["contact_id"]})
-                        continue
-                    subject = reply_subject(orig_subject or ("%s role" % (t["role"] or "Salesforce")))
-                    body = nudge_text(kind, t["contact_id"], t["name"], t["role"], t["company"])
-                    try:
-                        mid = mailer.send(cfg, t["email"], subject, body, None, in_reply_to=orig_id, references=orig_id)
-                    except Exception as e:
-                        if not getattr(e, "maybe_sent", False):
-                            raise
-                        # Gmail may already have it: record the nudge as done so the next run never sends it twice
-                        conn.execute(
-                            "INSERT INTO emails (job_id, contact_id, kind, subject, body, in_reply_to, status, error, sent_at,"
-                            " run_id) VALUES (?,?,?,?,?,?, 'sent', ?, ?, ?)",
-                            (t["job_id"], t["contact_id"], kind, subject, body, orig_id,
-                             (str(e) + " - may have been delivered; not retried")[:1000], db.now_iso(), run_id))
-                        counts["errors"] += 1
-                        emit(LANE, "warning", "%s to %s may not have gone out (not retried): %s"
-                             % ("Nudge 1" if kind == "nudge1" else "Nudge 2", t["email"], str(e)[:200]), "warn",
-                             {"contact_id": t["contact_id"], "kind": kind})
-                        continue
-                    cur = conn.execute(
-                        "INSERT INTO emails (job_id, contact_id, kind, subject, body, message_id, in_reply_to,"
-                        " status, sent_at, run_id) VALUES (?,?,?,?,?,?,?, 'sent', ?, ?)",
-                        (t["job_id"], t["contact_id"], kind, subject, body, mid, orig_id, db.now_iso(), run_id))
-                    counts["nudges_sent"] += 1
-                    emit(LANE, "nudge_sent", "%s sent to %s (%s)" % ("Nudge 1" if kind == "nudge1" else "Nudge 2",
-                                                                     t["name"] or t["email"],
-                                                                     display_company(t["company"])),
-                         "success", {"contact_id": t["contact_id"], "job_id": t["job_id"], "kind": kind,
-                                     "email_id": cur.lastrowid})
-                except Exception as e:
-                    counts["errors"] += 1
-                    emit(LANE, "error", "Follow-up for %s failed: %s" % (t["email"], e), "error",
-                         {"contact_id": t["contact_id"]})
-            if not stopped():
-                try:
-                    scan_inbound(conn, mb, cfg, emit, counts)
-                except Exception as e:      # the inbound scan never blocks nudges
-                    counts["errors"] += 1
-                    emit(LANE, "warning", "Inbox scan for application replies failed: %s" % e, "warn")
-    except mailer.MailError as e:
-        counts["errors"] += 1
-        emit(LANE, "error", "Mailbox unavailable: %s" % e, "error")
-        counts["error"] = str(e)
-    return counts
+
+def _limit_bursts(bounces) -> set:
+    """Indexes of bounce notices that arrived in a burst (>= 5 within 3 minutes): Gmail's sending-limit failures."""
+    ts = [(i, db.parse_ts(b.get("date"))) for i, b in enumerate(bounces)]
+    out = set()
+    for i, t in ts:
+        if not t:
+            continue
+        near = [j for j, u in ts if u and abs((u - t).total_seconds()) <= 180]
+        if len(near) >= 5:
+            out.update(near)
+    return out

@@ -45,7 +45,7 @@ TRUSTED_SOURCES = {"post", "website", "import", "replies", "gmail", "hunter", "a
 GUESS_SOURCES = {"salesql", "pattern", "guess", "guessed", "inferred", ""}
 
 DEFAULTS = {"per_account_daily": 25, "per_account_hourly": 8, "min_gap_s": 90, "account_gap_s": 240,
-            "warmup_days": 7, "warmup_daily": 12, "limit_pause_h": 24, "auth_pause_h": 6}
+            "warmup_days": 7, "warmup_daily": 12, "limit_pause_h": 6, "auth_pause_h": 6}   # Gmail: "1 to 24 hours"
 DOH_URL = "https://dns.google/resolve?%s"
 HUNTER_VERIFY = "https://api.hunter.io/v2/email-verifier?%s"
 MX_TTL_S = 30 * 86400
@@ -403,6 +403,33 @@ def check_recipient(conn, cfg, addr, email_source="", fetch=None, verify=None) -
 
 
 # ------------------------------------------------------------------ one-time data fix (27 Nov)
+
+def fix_limit_bounces_again(conn) -> int:
+    """27 Nov (build .2): the first follow-up run after the repair read the same 26 Nov limit notices again and stored
+    them as bounces a second time. Same repair once more, now that the follow-up lane recognises the bursts."""
+    if _get(conn, "fix_limit_bounces_v2"):
+        return 0
+    conn.execute("DELETE FROM app_meta WHERE k='fix_limit_bounces_v1'")
+    n = fix_limit_bounces(conn)
+    cap = time.time() + 6 * 3600                 # build .1 paused for 24 h; Gmail lifts its limit in 1-24 h: retry sooner
+    for r in conn.execute("SELECT k, v FROM app_meta WHERE k LIKE 'mail_pause:%'").fetchall():
+        try:
+            if float(r[1]) > cap:
+                _set(conn, r[0], cap)
+        except ValueError:
+            pass
+    _set(conn, "fix_limit_bounces_v2", db.now_iso())
+    return n
+
+
+def any_account_free(conn, cfg, now=None) -> bool:
+    """Some account could send today (not paused, under its daily cap) - spacing ignored."""
+    now = time.time() if now is None else now
+    for a in accounts(cfg):
+        if paused_until(conn, a["address"]) <= now and sent_today(conn, a["address"]) < daily_cap(conn, cfg, a):
+            return True
+    return ((cfg or {}).get("email") or {}).get("backend") == "file"
+
 
 def fix_limit_bounces(conn) -> int:
     """Gmail's "sending limit" notices were stored as bounces (10 Nov, 26 Nov): a burst of >= 5 "bounces" inside three

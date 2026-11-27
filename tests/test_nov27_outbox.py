@@ -209,6 +209,35 @@ class OutboxTests(TempData, unittest.TestCase):
         self.assertTrue(any("old.inbox@example.com" in str(a) for a in out))
 
 
+class LimitBurstTests(TempData, unittest.TestCase):
+    def test_a_burst_of_failures_is_gmail_limit_not_dead_addresses(self):
+        cfg = smtp_cfg(self.cfg)
+        job = actions.save_job(self.conn, 1, "posts", "posts", "Acme Inc", "Salesforce Developer")["job_id"]
+        stamps = ["2026-11-26T14:39:%02d+05:30" % (10 * i) for i in range(6)]
+        bounces = [{"failed_addr": "p%d@acme.example" % i, "subject": "Delivery Status Notification (Failure)",
+                    "date": ts, "limit": False} for i, ts in enumerate(stamps)]
+        bounces.append({"failed_addr": "solo@acme.example", "subject": "Undeliverable", "date": "2026-11-20T10:00:00+05:30",
+                        "limit": False})
+        self.assertEqual(followups._limit_bursts(bounces), set(range(6)))
+        for b in bounces:
+            c = self.conn.execute("INSERT INTO contacts (job_id, email, created_at) VALUES (?,?,?)",
+                                  (job, b["failed_addr"], db.now_iso())).lastrowid
+            self.conn.execute("INSERT INTO emails (job_id, contact_id, kind, status, sent_at, sender) VALUES"
+                              " (?,?,'initial','sent','2026-11-20T09:00:00+05:30',?)", (job, c, A1))
+
+        class Box(FakeBox):
+            def find_bounces(self, days=7):
+                return bounces
+        with mock.patch.object(mailer, "mailbox", Box):
+            counts = followups.run_followups(self.conn, 1, cfg, emit_fn=lambda *a, **k: None, today=db.today_ist())
+        self.assertEqual(counts["limit_notices"], 6)
+        self.assertEqual(counts["bounces"], 1)                                  # only the lone one is a real bounce
+        self.assertFalse(sendguard.bounced_before(self.conn, "p0@acme.example"))
+        self.assertTrue(sendguard.bounced_before(self.conn, "solo@acme.example"))
+        # an old notice pauses nothing now
+        self.assertEqual(sendguard.paused_until(self.conn, A1), 0)
+
+
 class AutoLanesTests(TempData, unittest.TestCase):
     def test_followups_and_agencies_by_themselves_in_focus_mode(self):
         cfg = config.load()
