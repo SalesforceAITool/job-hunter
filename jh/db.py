@@ -81,7 +81,10 @@ CREATE INDEX IF NOT EXISTS ix_replies_job ON replies(job_id);
 EXTRA_COLUMNS = {
     "contacts": [("stop_nudges", "INTEGER DEFAULT 0"), ("notes", "TEXT")],
     "jobs": [("lookup_tries", "INTEGER DEFAULT 0")],   # contact-lookup retries handed out by seen.filter_jobs
-    "emails": [("run_id", "INTEGER")],
+    # 27 Nov (outbox): sender = the Gmail account it went (or goes) out from; queued = 1 while it waits in the outbox
+    # (status stays 'sending' so every dedupe check already counts it); attempts/next_try = outbox retries
+    "emails": [("run_id", "INTEGER"), ("sender", "TEXT"), ("queued", "INTEGER DEFAULT 0"),
+               ("attempts", "INTEGER DEFAULT 0"), ("next_try", "TEXT")],
     # category = jh.replies.classify (interview / call_request / ...); draft = a reply draft was saved in Gmail
     "replies": [("category", "TEXT"), ("draft", "INTEGER DEFAULT 0"), ("message_id", "TEXT")],
     # ready = the engine reached the final Review page with every required field answered

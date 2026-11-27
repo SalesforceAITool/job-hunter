@@ -217,7 +217,8 @@ class SendFailureTests(TempData, unittest.TestCase):
 
     def test_smtp_connection_error_marks_failed_and_retry_possible(self):
         from jh import mailer
-        cfg = dict(self.cfg, email={"backend": "smtp", "address": "a@gmail.com", "app_password": "abcdabcdabcdabcd"})
+        cfg = dict(self.cfg, email={"backend": "smtp", "address": "a@gmail.com", "app_password": "abcdabcdabcdabcd",
+                                    "queue": False})   # the direct SMTP path (the outbox has its own tests)
         job, cid = self._contact()
 
         def boom(*a, **k):

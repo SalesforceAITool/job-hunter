@@ -220,6 +220,19 @@ def failed_address(info: dict, own_addr="") -> str:
     return ""
 
 
+LIMIT_NOTICE = re.compile(r"reached a limit for sending|sending limit|5\.4\.5|limit for sending mail|"
+                          r"daily user sending limit|rate limit", re.I)
+
+
+def _bounce_info(m, own) -> dict:
+    """A bounce notice -> {failed_addr, subject, date, limit}. limit=True: Gmail's own "you have reached a limit for
+    sending mail" notice (27 Nov: 18 of these were stored as dead addresses) - the address is fine, the account was
+    throttled."""
+    text = "%s\n%s" % (m.get("subject") or "", m.get("text") or "")
+    return {"failed_addr": failed_address(m, own), "subject": m["subject"], "date": m["date"],
+            "limit": bool(LIMIT_NOTICE.search(text))}
+
+
 # ------------------------------------------------------------------ mailbox sessions
 
 class _FileBox:
@@ -254,7 +267,7 @@ class _FileBox:
         out = []
         for m in self._read(self.inbox):
             if is_bounce(m) and db.ts_date(m["date"]) >= cutoff:
-                out.append({"failed_addr": failed_address(m, own), "subject": m["subject"], "date": m["date"]})
+                out.append(_bounce_info(m, own))
         return out
 
     def find_sent_message(self, to_addr, subject_hint=None):
@@ -351,7 +364,7 @@ class _ImapBox:
         crit = ('(SINCE %s OR FROM "mailer-daemon" OR SUBJECT "Delivery Status Notification" '
                 'SUBJECT "Undeliverable")' % since)
         own = _email_cfg(self.cfg).get("address", "")
-        return [{"failed_addr": failed_address(m, own), "subject": m["subject"], "date": m["date"]}
+        return [_bounce_info(m, own)
                 for m in self._search("INBOX", crit, max_n=100) if is_bounce(m) or "mailer-daemon" in m["from_addr"]]
 
     def senders_at(self, domain, days=365):

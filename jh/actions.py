@@ -7,7 +7,7 @@ import os
 import re
 from urllib.parse import urlparse
 
-from . import config, db, dedupe, events, mailer
+from . import config, db, dedupe, events, mailer, outbox, sendguard
 from . import resume as resume_mod
 
 RULES_TEXT = """Job Hunter rules (Akshay Kumar Verma, Salesforce developer, 7+ yrs, India, NO US work authorization,
@@ -312,6 +312,13 @@ def send_application(conn, run_id, lane, job_id, contact_id, subject, body, resu
         events.emit(conn, run_id, lane, "warning", "Refused an email to %s that contained a secret" % row["email"],
                     "warn", {"job_id": job_id, "contact_id": contact_id})
         return res
+    # 27 Nov: never mail an address that bounced, a domain with no mail server, or an unverified guess
+    ok_to, why_not = sendguard.check_recipient(conn, cfg, row["email"], row["email_source"] or "")
+    if not ok_to:
+        res["error"] = "not sent: %s (%s)" % (why_not, row["email"])
+        events.emit(conn, run_id, lane, "warning", "Not emailing %s: %s" % (row["email"], why_not), "warn",
+                    {"job_id": job_id, "contact_id": contact_id, "recipient_check": why_not})
+        return res
     cap = int(cfg.get("max_emails_per_run", 25))
     day_cap = int(cfg.get("max_emails_per_day") or cap)   # SPEC: "the daily cap"; watch mode starts many runs a day
     ag_cap = (cfg.get("agencies") or {}).get("daily_cap")
@@ -343,9 +350,25 @@ def send_application(conn, run_id, lane, job_id, contact_id, subject, body, resu
                     {"job_id": job_id, "contact_id": contact_id, "email_id": email_id, "dry_run": True,
                      "resume_path": pdf, "subject": subject})
         return res
+    if outbox.queue_mode(cfg) and sendguard.accounts(cfg):
+        # 27 Nov: the outbox sends it within minutes, spaced out over the Gmail accounts (no burst, no limit wall)
+        conn.execute("UPDATE emails SET queued=1, resume_path=?, next_try=NULL WHERE id=?", (pdf, email_id))
+        res.update(ok=True, queued=True, note="queued: goes out from the outbox within minutes (spaced out over the Gmail"
+                                             " accounts); counts as contacted already")
+        events.emit(conn, run_id, lane, "email_queued", "Queued email to %s (%s) - %s" % (
+            row["name"] or row["email"], row["title"] or "?", label), "success",
+            {"job_id": job_id, "contact_id": contact_id, "email_id": email_id, "resume_path": pdf, "subject": subject})
+        return res
+    acct, why = sendguard.pick(conn, cfg, ignore_gap=True)
+    if acct is None and sendguard.accounts(cfg):
+        return _failed(conn, run_id, lane, row, email_id, pdf, "no Gmail account free: %s" % why, res)
+    send_cfg = sendguard.acct_cfg(cfg, acct) if acct else cfg
+    sender = acct["address"] if acct else (cfg.get("email") or {}).get("address")
     try:
-        mid = mailer.send(cfg, row["email"], subject, body, attachment_path=pdf)
+        mid = mailer.send(send_cfg, row["email"], subject, body, attachment_path=pdf)
     except Exception as e:
+        if sender:
+            sendguard.on_send_error(conn, cfg, sender, e)
         if getattr(e, "maybe_sent", False):  # Gmail may have it: keep the 'sending' claim so it is never re-sent
             conn.execute("UPDATE emails SET resume_path=?, error=? WHERE id=?", (pdf, str(e)[:1000], email_id))
             res.update(ok=False, error=str(e) + " - may have been delivered; not retried")
@@ -354,8 +377,10 @@ def send_application(conn, run_id, lane, job_id, contact_id, subject, body, resu
                         {"job_id": job_id, "contact_id": contact_id, "email_id": email_id, "error": str(e)})
             return res
         return _failed(conn, run_id, lane, row, email_id, pdf, str(e), res)
-    conn.execute("UPDATE emails SET status='sent', message_id=?, resume_path=?, sent_at=? WHERE id=?",
-                 (mid, pdf, now, email_id))
+    conn.execute("UPDATE emails SET status='sent', message_id=?, resume_path=?, sent_at=?, sender=? WHERE id=?",
+                 (mid, pdf, now, sender, email_id))
+    if sender:
+        sendguard.mark_sent(conn, sender)
     conn.execute("UPDATE jobs SET status='contacted', updated_at=? WHERE id=? AND status IN ('found','qualified','skipped')",
                  (now, job_id))
     res.update(ok=True)

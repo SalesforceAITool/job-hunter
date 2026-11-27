@@ -154,6 +154,14 @@ def collect(conn, start, end) -> dict:
         "replies": one("SELECT COUNT(*) FROM replies"),
     }
     out["applied"] = len(out["easy_apply"]) + len(out["portals"])
+    # 27 Nov: the outbox and each Gmail account (sent today / cap / paused) - sending problems show up the same day
+    try:
+        from . import outbox, sendguard
+        out["outbox_waiting"] = outbox.pending(conn)
+        out["accounts"] = sendguard.status(conn, config.load())
+    except Exception as e:                       # the report never fails over this
+        log.warning("report: sending status: %s", e)
+        out["outbox_waiting"], out["accounts"] = 0, []
     return out
 
 
@@ -219,6 +227,16 @@ def render(s, title_day=None) -> tuple:
          link(r["apply_url"]) or link(r["url"])) for r in s["waiting"]]))
     sections.append(("Job Hunter was not running (laptop off or asleep, or app closed)", [
         (_when(g[0]), "until %s (%s)" % (_when(g[1]), _span(g)), "") for g in s.get("gaps") or []]))
+    acc_rows = []
+    for a in s.get("accounts") or []:
+        st = "paused until %s — %s" % (_when(datetime.fromtimestamp(a["paused_until"], db.IST).isoformat()),
+                                       a.get("pause_reason") or "") if a.get("paused_until") else (
+            "ready" if a.get("ready") else "no app password — add it in Settings")
+        acc_rows.append(("", "%s: %d/%d sent today · %s" % (a["address"], a["sent_today"], a["daily_cap"], st), ""))
+    if s.get("outbox_waiting"):
+        acc_rows.append(("", "%d email(s) waiting in the outbox (they go out by themselves, spaced out)"
+                         % s["outbox_waiting"], ""))
+    sections.append(("Sending accounts", acc_rows))
     sections.append(("Emails that did not go out", [
         (_when(m["sent_at"]), "%s → %s: %s" % (_company(m["company"]), m["email"] or "?", m["why"]), "")
         for m in s["not_sent"]]))
@@ -278,8 +296,17 @@ def send(conn, cfg, start, end, title_day=None) -> dict:
         return {"ok": False, "error": "no address to send the report to (Settings → Daily report)"}
     s = collect(conn, start, end)
     subject, text, html_body = render(s, title_day)
+    send_cfg = cfg
+    try:                         # 27 Nov: from a Gmail account that is not paused by Gmail's sending limit
+        from . import sendguard
+        if (cfg.get("email") or {}).get("backend", "smtp") == "smtp":
+            acct, _ = sendguard.pick(conn, cfg, ignore_gap=True)
+            if acct:
+                send_cfg = sendguard.acct_cfg(cfg, acct)
+    except Exception as e:
+        log.warning("report: account pick: %s", e)
     try:
-        mailer.send(cfg, st["to"], subject, text, html=html_body)
+        mailer.send(send_cfg, st["to"], subject, text, html=html_body)
     except Exception as e:
         return {"ok": False, "error": str(e)[:300], "subject": subject}
     return {"ok": True, "to": st["to"], "subject": subject, "applied": s["applied"], "emails": len(s["emails"])}

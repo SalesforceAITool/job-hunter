@@ -86,7 +86,8 @@ class CapsAndDoubleSends(_Base, unittest.TestCase):
 
     def _smtp_cfg(self):
         cfg = json.loads(json.dumps(self.cfg))
-        cfg["email"].update(backend="smtp", address="akshay.verma0031@gmail.com", app_password="abcd efgh ijkl mnop")
+        cfg["email"].update(backend="smtp", address="akshay.verma0031@gmail.com", app_password="abcd efgh ijkl mnop",
+                            queue=False, verify_recipients=False)   # direct SMTP path; outbox/checks: test_nov27_outbox
         return cfg
 
     def test_ambiguous_smtp_failure_is_never_retried(self):
