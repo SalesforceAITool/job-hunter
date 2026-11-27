@@ -189,7 +189,10 @@ class AgencyApi(TempData, unittest.TestCase):
         self.assertEqual(st, 200)
         self.assertEqual(len(d["agencies"]), 245)
         self.assertIn("tracks", d)
-        self.assertEqual(d["settings"], {"per_run": 5, "daily_cap": 15, "focus": "all"})
+        # 27 Nov: outside India first by default; agency pitches also run by themselves (auto, every_min, hours)
+        self.assertEqual({k: d["settings"][k] for k in ("per_run", "daily_cap", "focus")},
+                         {"per_run": 5, "daily_cap": 15, "focus": "outside"})
+        self.assertTrue(d["settings"]["auto"])
         st, d2 = self.req("POST", "/api/agencies", {"name": "Brand New Staffing", "website": "brandnew.io", "region": "us"})
         self.assertEqual(st, 200)
         st, _ = self.req("POST", "/api/agencies/%d" % d2["id"], {"status": "paused"})

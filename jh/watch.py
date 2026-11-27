@@ -30,6 +30,7 @@ log = logging.getLogger("jobhunter.watch")
 
 GEO = {"us": "103644278", "india": "102713980", "world": "92000000"}
 REGION_SOURCE = {"us": "linkedin_us", "india": "linkedin_india", "world": "linkedin_world"}
+REGION_RANK = {"us": 0, "world": 1, "india": 2}       # 27 Nov: work for clients outside India first
 GUEST_URL = "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search"
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
       "Chrome/129.0.0.0 Safari/537.36")
@@ -233,6 +234,14 @@ def li_fast_today(conn) -> int:
                         (day,)).fetchone()[0]
 
 
+def agency_emails_today(conn) -> int:
+    """Agency pitches written today (sent or waiting in the outbox) - the agencies daily cap counts these."""
+    day = db.now_iso()[:10]
+    return conn.execute("SELECT COUNT(*) FROM emails e JOIN jobs j ON j.id=e.job_id WHERE j.source='agency' AND"
+                        " e.kind='initial' AND e.status IN ('sent','sending','bounced') AND substr(e.sent_at,1,10)=?",
+                        (day,)).fetchone()[0]
+
+
 def over_budget(conn) -> bool:
     from . import runner as _r
     return _r.over_budget(conn)
@@ -373,15 +382,62 @@ class Watcher:
         self.stop.set()
 
     def _loop(self):
+        n = 0
         while not self.stop.wait(TICK_S):
+            n += 1
             try:
                 self.tick()
             except Exception as e:   # never let the dispatcher die
                 log.exception("watch tick failed: %s", e)
             try:
+                self.outbox_tick()
+            except Exception as e:
+                log.exception("outbox failed: %s", e)
+            try:
                 self.report_tick()
             except Exception as e:
                 log.exception("daily report failed: %s", e)
+            if n % 4 == 0:
+                try:
+                    self.update_tick()
+                except Exception as e:
+                    log.exception("self-update check failed: %s", e)
+
+    def outbox_tick(self):
+        """27 Nov: send at most one queued email / nudge (jh/outbox.py), spaced out over the Gmail accounts."""
+        from . import outbox
+        cfg = config.load()
+        if self.state.get("no_jobboard") or not outbox.queue_mode(cfg):
+            return None
+        conn = db.connect(self.db_path)
+        try:
+            return outbox.tick(conn, cfg)
+        finally:
+            conn.close()
+
+    def update_tick(self):
+        """27 Nov: a new build on disk + nothing running -> restart into it (jh/selfupdate.py)."""
+        from . import selfupdate
+        if self.state.get("no_jobboard") or runner.is_running():
+            return None
+        new = selfupdate.pending()
+        if not new or self.state.get("update_failed") == new:
+            return None
+        conn = db.connect(self.db_path)
+        try:
+            events.emit(conn, None, "watch", "step", "New Job Hunter build %s found - restarting to load it" % new, "info")
+        finally:
+            conn.close()
+        ok, why = selfupdate.restart()
+        if not ok:
+            self.state["update_failed"] = new
+            log.error("self-update: %s", why)
+            conn = db.connect(self.db_path)
+            try:
+                events.emit(conn, None, "watch", "warning", "Not restarting: %s" % why, "error")
+            finally:
+                conn.close()
+        return ok
 
     def report_tick(self):
         """Akshay, 11 Nov: the daily report email (jh/report.py) when it is due."""
@@ -411,10 +467,12 @@ class Watcher:
                 return self._start(conn, "submit", lanes=["submit"])
             focus = bool(config.load().get("focus_linkedin"))
             if focus:
-                # only LinkedIn posts + Easy Apply by themselves; the rest waits for his own Run click
-                if not runner.is_running():
-                    return self.li_fast_tick(conn, now)
-                return None
+                # LinkedIn posts + Easy Apply every few minutes; since 27 Nov also replies/follow-ups and agency
+                # pitches by themselves (Akshay: "agency apne aap, follow up ... I won't do anything")
+                if runner.is_running():
+                    return None
+                started = self.li_fast_tick(conn, now)
+                return started or self.auto_lanes_tick(conn, now)
             # 2. Job board: refresh in the background when due (plain HTTP); auto-fill picks after each refresh
             self.jobboard_tick(conn)
             ap = self.autopilot()
@@ -523,6 +581,37 @@ class Watcher:
                         % (errors[0], self.state["backoff"]), "warn")
         return new
 
+    def auto_lanes_tick(self, conn, now, local_hour=None):
+        """27 Nov: follow-ups (replies, bounces, nudges into the outbox - no AI) every autopilot.focus_followups_min,
+        agency pitches (AI) every agencies.every_min inside agencies.start_hour..end_hour IST (UK/US working day)
+        until the agency daily cap. Returns the start dict or None."""
+        cfg = config.load()
+        ap = cfg.get("autopilot") or {}
+        if ap.get("on") is False:
+            return None
+        # Job board: company career sites (Greenhouse / Lever / Ashby / Workable) + remote boards, plain HTTP; picks are
+        # filled by board_apply when idle (27 Nov QA: never ran in focus mode)
+        try:
+            self.jobboard_tick(conn)
+        except Exception as e:
+            log.warning("job board refresh: %s", e)
+        started = self._start_board(conn)
+        if started:
+            return started
+        if now >= self.state.get("next_focus_followups", 0):
+            self.state["next_focus_followups"] = now + 60 * int(ap.get("focus_followups_min") or 120)
+            if config.email_configured(cfg):
+                return self._start(conn, "followups", lanes=["followups"])
+        ag = cfg.get("agencies") or {}
+        cap = int(ag.get("daily_cap") or 0)
+        hour = time.localtime(now).tm_hour if local_hour is None else local_hour
+        if ag.get("auto", True) and cap > 0 and int(ag.get("start_hour", 13)) <= hour < int(ag.get("end_hour", 24)) \
+                and now >= self.state.get("next_agencies", 0) and now >= self.state.get("next_ai", 0):
+            self.state["next_agencies"] = now + 60 * int(ag.get("every_min") or 120)
+            if agency_emails_today(conn) < cap and not over_budget(conn):
+                return self._start(conn, "agencies", lanes=["agencies"])
+        return None
+
     def linkedin_safe(self) -> bool:
         """Real app with the account-safety setting on (tests that inject a fetcher keep the old behaviour)."""
         return not getattr(self, "injected", False) and bool(config.load().get("linkedin_safe", True))
@@ -585,7 +674,8 @@ class Watcher:
             return None
         if over_budget(conn):
             return None
-        regions = (config.load().get("autopilot") or {}).get("regions") or ["india", "world"]
+        regions = (config.load().get("autopilot") or {}).get("regions") or ["us", "world", "india"]
+        regions = sorted(regions, key=lambda r: REGION_RANK.get(r, 5))
         lanes = [x for x in ("easy_apply", "posts", "linkedin_jobs")
                  if x in [str(v) for v in (lf.get("lanes") if isinstance(lf.get("lanes"), list) else [])]] or ["easy_apply"]
         targets = []
@@ -639,7 +729,9 @@ class Watcher:
             return [], lanes
         self.state["pause_said"] = False
         cutoff = (db.now() - timedelta(days=2)).replace(microsecond=0).isoformat()
-        fresh = [q for q in queued(conn, limit=50) if (q.get("first_seen") or "") >= cutoff][:max(0, cap - len(redo))]
+        fresh = [q for q in queued(conn, limit=50) if (q.get("first_seen") or "") >= cutoff]
+        # 27 Nov: outside-India jobs first (US / worldwide), India after; newest first inside each group
+        fresh = sorted(fresh, key=lambda q: REGION_RANK.get(q.get("region"), 5))[:max(0, cap - len(redo))]
         targets = redo[:cap] + fresh
         if not targets:
             lanes = [x for x in lanes if x != "easy_apply"]
@@ -716,11 +808,11 @@ class Watcher:
                 conn.executemany("INSERT OR REPLACE INTO app_meta (k, v) VALUES (?, ?)",
                                  [("ea_redo_%d" % t["portal_id"], str(rid)) for t in (targets or [])
                                   if isinstance(t.get("portal_id"), int)])
-            elif kind in ("followups", "linkedin_jobs"):
+            elif kind in ("followups", "linkedin_jobs", "agencies"):
                 rid = self.start_run("auto", db_path=self.db_path, lanes=lanes, regions=regions)
             else:
                 rid = self.start_run("approved", db_path=self.db_path, lanes=lanes)
-            if kind in ("li_fast", "board_apply", "posts", "linkedin_jobs", "easy_apply"):
+            if kind in ("li_fast", "board_apply", "posts", "linkedin_jobs", "easy_apply", "agencies"):
                 self.state["ai_active"] = True                  # gap starts when this run finishes (tick)
             return {"kind": kind, "run_id": rid}
         except runner.AlreadyRunning:

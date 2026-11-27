@@ -48,6 +48,7 @@ Drop (decision `skipped`, short `skip_reason`):
 - already contacted → `"already contacted"`;
 - qualifies but you found no email for a suitable person → `"no email found"` (use exactly this text — the portal lane picks these up).
 Priority when time is short: US remote first, then worldwide remote (USD/GBP/EUR pay), then India remote. All of them get applied to.
+**Outside-India roles are the main goal (Akshay, 27 Nov: they pay several times more).** For a client or agency in the US, UK, Europe, Australia, the Middle East etc., the email says he works remotely from India with real overlap on their working hours, can contract company-to-company (C2C / B2B invoice) and start within 15 days, and — for agencies and consultancies — that he can also bring more Salesforce developers from his own team for larger or parallel work. Never claim residency, a work permit or a location he doesn't have.
 For India-based roles, write the email for an Indian employer: say he is based in India and looking for a remote role (do not invent a city, notice period or current salary); don't mention US hours or contract unless the post asks for them.
 
 Every job gets a **fit_score 0–100**: skills match (50), seniority match (15), remote + contract fit (20), eligibility (15; 0 if blocked by work authorization). A skipped job still gets an honest score.

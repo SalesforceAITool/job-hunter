@@ -45,10 +45,15 @@ DEFAULTS = {
         "app_password": "",
         "from_name": "Akshay Verma",
     },
-    "agencies": {"per_run": 5, "daily_cap": 15, "focus": "all"},   # focus: outside | india | all; own caps
+    # focus: outside | india | all; own caps. 27 Nov: auto = pitched by themselves every every_min minutes between
+    # start_hour and end_hour IST (UK / US working day), until daily_cap
+    "agencies": {"per_run": 5, "daily_cap": 15, "focus": "outside", "auto": True, "every_min": 120, "start_hour": 13,
+                 "end_hour": 24},
     # Autopilot (architect 2026-10-22): runs by themselves while the app is open, so new jobs are reached in
     # minutes, not after the next button click. Every AI lane stops for the day at budget.daily_usd.
-    "autopilot": {"on": True, "followups_min": 15, "linkedin_jobs_min": 60, "regions": ["india", "world"]},
+    # 27 Nov: focus_followups_min = replies/follow-ups by themselves in LinkedIn focus mode; outside India first
+    "autopilot": {"on": True, "followups_min": 15, "linkedin_jobs_min": 60, "regions": ["us", "world", "india"],
+                  "focus_followups_min": 120},
     "budget": {"daily_usd": 40},
     # Akshay, 11 Nov: one email a day with what Job Hunter did (Easy Apply / portal applications submitted, recruiter
     # emails sent, follow-ups, replies, forms waiting) at `hour` IST, to `to` (empty = the application Gmail)
@@ -78,7 +83,7 @@ DEFAULTS = {
     "max_years_required": 7,
     # Akshay, 10 Nov: runs quietly in the background - no dashboard tab pops up when Windows starts
     "open_browser_at_boot": False,
-    "default_regions": ["india", "world"],   # LinkedIn regions when a run doesn't pick any (US: 0 replies so far)
+    "default_regions": ["us", "world", "india"],   # 27 Nov: outside India first (pays several times more)
     # Job board: remote Salesforce jobs worldwide from the last 48 h, fetched by plain Python (no AI)
     # fast_minutes: company portals + remote boards (cheap JSON); li_every_hours: LinkedIn's public list per region
     "jobboard": {"on": True, "auto_fill": True, "per_run": 5, "daily_cap": 20, "daily_usd": 6,
@@ -190,6 +195,8 @@ def masked(cfg: dict) -> dict:
     em = out.get("email") or {}
     em["app_password"] = mask_secret(em.get("app_password", ""))
     em["app_password_set"] = bool((cfg.get("email") or {}).get("app_password"))
+    em["accounts"] = [dict(a, app_password=mask_secret(a.get("app_password", "")), app_password_set=bool(a.get("app_password")))
+                      for a in (em.get("accounts") or []) if isinstance(a, dict)]
     out["email"] = em
     ef = dict(out.get("email_finder") or {})
     for k in ("hunter_api_key", "apollo_api_key"):
@@ -245,6 +252,21 @@ def apply_update(cfg: dict, incoming: dict, from_api: bool = False) -> dict:
             em.pop("app_password", None)
         elif isinstance(pw, str):
             em["app_password"] = pw.replace(" ", "").strip()
+        if isinstance(em.get("accounts"), list):
+            # a masked password sent back unchanged keeps the saved one (same address)
+            old = {str(a.get("address") or "").strip().lower(): a for a in ((cfg.get("email") or {}).get("accounts") or [])
+                   if isinstance(a, dict)}
+            rows = []
+            for a in em["accounts"]:
+                if not isinstance(a, dict):
+                    continue
+                a = dict(a)
+                a.pop("app_password_set", None)
+                p = a.get("app_password")
+                if p is None or (isinstance(p, str) and p.startswith(MASK_PREFIX)):
+                    a["app_password"] = (old.get(str(a.get("address") or "").strip().lower()) or {}).get("app_password", "")
+                rows.append(a)
+            em["accounts"] = rows
     ef = incoming.get("email_finder")
     if isinstance(ef, dict):
         for k in ("hunter_api_key", "apollo_api_key"):
@@ -285,7 +307,13 @@ def apply_update(cfg: dict, incoming: dict, from_api: bool = False) -> dict:
     ag["focus"] = {"us_first": "outside", "us_only": "outside"}.get(ag.get("focus"), ag.get("focus"))
     if ag.get("focus") not in ("outside", "india", "all"):
         ag["focus"] = "outside"
-    out["agencies"] = {k: ag[k] for k in ("per_run", "daily_cap", "focus")}
+    ag["auto"] = _as_bool(ag.get("auto", True))
+    for k, lo, hi in (("every_min", 30, 1440), ("start_hour", 0, 23), ("end_hour", 1, 24)):
+        try:
+            ag[k] = min(hi, max(lo, int(ag.get(k))))
+        except (TypeError, ValueError, OverflowError):
+            ag[k] = DEFAULTS["agencies"][k]
+    out["agencies"] = {k: ag[k] for k in DEFAULTS["agencies"]}
     jb = out.get("jobboard") if isinstance(out.get("jobboard"), dict) else {}
     jb = _deep_merge(DEFAULTS["jobboard"], jb)
     jb["on"], jb["auto_fill"] = _as_bool(jb.get("on")), _as_bool(jb.get("auto_fill"))
@@ -305,12 +333,12 @@ def apply_update(cfg: dict, incoming: dict, from_api: bool = False) -> dict:
     out["jobboard"] = {k: jb[k] for k in DEFAULTS["jobboard"]}
     ap = _deep_merge(DEFAULTS["autopilot"], out.get("autopilot") if isinstance(out.get("autopilot"), dict) else {})
     ap["on"] = _as_bool(ap.get("on"))
-    for k, lo, hi in (("followups_min", 5, 240), ("linkedin_jobs_min", 15, 720)):
+    for k, lo, hi in (("followups_min", 5, 240), ("linkedin_jobs_min", 15, 720), ("focus_followups_min", 30, 720)):
         try:
             ap[k] = min(hi, max(lo, int(ap.get(k))))
         except (TypeError, ValueError, OverflowError):
             ap[k] = DEFAULTS["autopilot"][k]
-    ap["regions"] = [r for r in ("us", "india", "world") if r in (ap.get("regions") or [])] or ["india", "world"]
+    ap["regions"] = [r for r in ("us", "world", "india") if r in (ap.get("regions") or [])] or ["us", "world", "india"]
     out["autopilot"] = {k: ap[k] for k in DEFAULTS["autopilot"]}
     bd = _deep_merge(DEFAULTS["budget"], out.get("budget") if isinstance(out.get("budget"), dict) else {})
     try:
@@ -358,7 +386,7 @@ def apply_update(cfg: dict, incoming: dict, from_api: bool = False) -> dict:
         ef["daily_cap"] = 25
     out["email_finder"] = {k: (str(ef.get(k) or "") if k != "daily_cap" else ef[k]) for k in DEFAULTS["email_finder"]}
     dr = out.get("default_regions") if isinstance(out.get("default_regions"), list) else DEFAULTS["default_regions"]
-    out["default_regions"] = [r for r in ("us", "india", "world") if r in dr] or ["india", "world"]
+    out["default_regions"] = [r for r in ("us", "world", "india") if r in dr] or ["us", "world", "india"]
     lm = out["engine"].get("lane_models")
     out["engine"]["lane_models"] = {str(k): clean_model(v) for k, v in lm.items() if clean_model(v)} if isinstance(lm, dict) else {}
     w = out.get("watch") if isinstance(out.get("watch"), dict) else {}
@@ -377,7 +405,32 @@ def apply_update(cfg: dict, incoming: dict, from_api: bool = False) -> dict:
         out["lookback"] = "24h"
     if out["email"].get("backend") not in ("smtp", "file"):
         out["email"]["backend"] = "smtp"
+    out["email"]["accounts"] = _clean_accounts(out["email"].get("accounts"), out["email"].get("address"))
+    out["email"]["queue"] = _as_bool(out["email"].get("queue", True))
     return out
+
+
+def _clean_accounts(rows, main_addr):
+    """email.accounts (27 Nov): extra Gmail accounts to send from / read replies in. [{address, app_password,
+    from_name, daily_cap, on}] - valid addresses only, no duplicate of the main account, at most 6."""
+    out, seen = [], {(main_addr or "").strip().lower()}
+    for a in rows if isinstance(rows, list) else []:
+        if not isinstance(a, dict):
+            continue
+        addr = str(a.get("address") or "").strip().lower()
+        if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[a-z]{2,}", addr) or addr in seen:
+            continue
+        seen.add(addr)
+        row = {"address": addr, "app_password": str(a.get("app_password") or "").replace(" ", "").strip(),
+               "from_name": str(a.get("from_name") or "").strip()[:60], "on": _as_bool(a.get("on", True))}
+        try:
+            cap = int(a.get("daily_cap") or 0)
+            if cap > 0:
+                row["daily_cap"] = min(100, cap)
+        except (TypeError, ValueError):
+            pass
+        out.append(row)
+    return out[:6]
 
 
 def email_configured(cfg: dict) -> bool:

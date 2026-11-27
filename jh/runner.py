@@ -19,7 +19,7 @@ ALL_LANES = ["followups"] + SOURCE_LANES + ["outreach", "agencies", "portal", "e
 ATS_LIKE = ("%greenhouse.io%", "%lever.co%", "%ashbyhq.com%")
 SELECTABLE_LANES = ("followups", "posts", "jobright", "linkedin_jobs", "himalayas", "agencies", "easy_apply", "portal",
                     "board_apply", "submit")
-REGIONS = ("us", "india", "world")
+REGIONS = ("us", "world", "india")      # 27 Nov: outside India first
 BOARD_FORMS_CAP = 6        # engine/prompts/board_apply.md: "at most 6 forms" per run
 FULL_RUN_OFF = ("jobright", "himalayas")
 LINKEDIN_LANES = ("posts", "linkedin_jobs", "easy_apply", "agencies")

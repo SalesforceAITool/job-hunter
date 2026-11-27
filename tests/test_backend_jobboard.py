@@ -3,6 +3,7 @@ import json
 import threading
 import time
 import unittest
+from unittest import mock
 from datetime import datetime, timedelta, timezone
 
 from test_backend_helpers import TempData
@@ -332,7 +333,10 @@ class ReviewRegressionTests(QueueAndApplyTests):
             ligate._st.update(until=t + 900, strikes=1)
             self.assertFalse(jobboard.due(self.conn, cfg, now_ts=t + 60))        # LinkedIn paused
             ligate._st.update(until=0.0, strikes=0)
-            self.assertTrue(jobboard.due(self.conn, cfg, now_ts=t + 60))         # LinkedIn due for real
+            with mock.patch.object(ligate, "safe_mode", lambda: True):
+                self.assertFalse(jobboard.due(self.conn, cfg, now_ts=t + 60))    # 27 Nov: account-safety mode
+            with mock.patch.object(ligate, "safe_mode", lambda: False):
+                self.assertTrue(jobboard.due(self.conn, cfg, now_ts=t + 60))     # LinkedIn due for real
             jobboard._state.update(last_li=t)
             self.assertTrue(jobboard.due(self.conn, cfg, now_ts=t + 31 * 60))    # fast refresh due
         finally:

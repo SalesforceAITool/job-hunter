@@ -28,7 +28,7 @@ class AutopilotTests(TempData, unittest.TestCase):
         w.tick(now + 62)
         self.assertEqual(len(calls), 1)               # follow-ups not again for 15 min
         w.tick(now + 301)
-        self.assertEqual(calls[-1], ("auto", ("linkedin_jobs",), ("india", "world")))
+        self.assertEqual(calls[-1], ("auto", ("linkedin_jobs",), ("us", "world", "india")))   # 27 Nov: outside India first
         self.assertTrue(w.status()["autopilot"])
 
     def test_over_budget_only_free_checks(self):

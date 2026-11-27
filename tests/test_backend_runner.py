@@ -143,7 +143,7 @@ class RunnerTests(TempData, unittest.TestCase):
         self.assertTrue(runner.wait(30))
         self.assertEqual(calls, ["easy_apply", "posts", "linkedin_jobs"])     # no JobRight, no Remote-boards emails
         started = [e for e in events_of(self.conn, rid) if e["type"] == "run_started"][0]["data"]
-        self.assertEqual(started["regions"], ["india", "world"])              # default regions: no US
+        self.assertEqual(started["regions"], ["us", "world", "india"])        # 27 Nov: outside India first
 
     def test_budget_stops_ai_lanes_not_submit(self):
         from jh import events as ev
@@ -157,8 +157,8 @@ class RunnerTests(TempData, unittest.TestCase):
         self.assertEqual(fin["posts"]["reason"], "daily AI budget reached")
 
     def test_normalize_selection(self):
-        self.assertEqual(runner.normalize_selection(None, None), (None, ["us", "india", "world"]))
-        self.assertEqual(runner.normalize_selection([], []), (None, ["us", "india", "world"]))
+        self.assertEqual(runner.normalize_selection(None, None), (None, ["us", "world", "india"]))
+        self.assertEqual(runner.normalize_selection([], []), (None, ["us", "world", "india"]))
         self.assertEqual(runner.normalize_selection("easy_apply, followups", "world,us"),
                          (["followups", "easy_apply"], ["us", "world"]))
         self.assertEqual(runner.normalize_selection(["nope"], None)[0], None)

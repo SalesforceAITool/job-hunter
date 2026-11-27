@@ -75,7 +75,8 @@ LOGIN = {"workday": ("myworkdayjobs.com", "myworkdaysite.com", "workday.com"), "
 AGGREGATORS = ("himalayas.app", "jobicy.com", "arbeitnow.com", "weworkremotely.com", "news.ycombinator.com",
                "indeed.com", "glassdoor.com", "naukri.com", "ziprecruiter.com", "remotive.com", "remoteok.com",
                "jobgether.com", "dice.com", "monster.com", "simplyhired.com", "talent.com", "builtin.com")
-AUTO_KINDS = ("portal", "easy_apply", "email")
+# 27 Nov: "board" (Himalayas / Jobicy / We Work Remotely / Arbeitnow listings: board_apply follows their Apply link)
+AUTO_KINDS = ("portal", "easy_apply", "email", "board")
 FILL_KINDS = ("portal", "login_portal", "company_site", "easy_apply", "email", "board", "unknown")
 
 _lock = threading.Lock()
@@ -805,7 +806,9 @@ def due(conn, cfg=None, now_ts=None) -> bool:
     # LinkedIn makes a refresh due early only when a LinkedIn pass can actually run: with no regions picked, or
     # while LinkedIn is paused after a rate limit, last_li never moves and this would start a full refresh
     # (150 company pages + every board) on every watcher tick
-    return bool(jb.get("li_regions")) and not ligate.cooling() and \
+    # 27 Nov (QA): in LinkedIn account-safety mode the LinkedIn pass never runs, so last_li never moved and every
+    # watcher tick started a full refresh (4,257 refreshes, ~1 a minute)
+    return bool(jb.get("li_regions")) and not ligate.cooling() and not ligate.safe_mode() and \
         now_ts - _state["last_li"] >= 3600 * int(jb.get("li_every_hours") or 2)
 
 
@@ -1054,7 +1057,7 @@ def auto_pick(conn, cfg=None, now=None) -> list:
         " ORDER BY CASE l.elig WHEN 'open' THEN 0 ELSE 1 END, CASE WHEN l.posted_at>=? THEN 0 ELSE 1 END,"
         " CASE WHEN COALESCE(l.applicants, 30)<25 THEN 0 ELSE 1 END,"
         " CASE l.apply_kind WHEN 'email' THEN 0 WHEN 'portal' THEN 1 ELSE 2 END, l.posted_at DESC LIMIT ?"
-        % ",".join("?" * len(kinds)), (iso(now - timedelta(hours=24)),) + kinds + (iso(now - timedelta(hours=3)), n)).fetchall()
+        % ",".join("?" * len(kinds)), (iso(now - timedelta(hours=48)),) + kinds + (iso(now - timedelta(hours=3)), n)).fetchall()
     return queue(conn, [r[0] for r in rows], by="auto")["queued"]
 
 

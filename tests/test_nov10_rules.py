@@ -78,21 +78,25 @@ class CycleTests(TempData, unittest.TestCase):
         self.assertIn("f_TPR=r7200", t)
         self.assertIn("more than 7 years", t)
 
-    def test_focus_mode_runs_only_the_linkedin_cycle(self):
+    def test_focus_mode_runs_the_linkedin_cycle_first(self):
         cfg = config.load(); cfg["li_fast"] = dict(cfg["li_fast"], every_min=10, gap_after_min=0)
-        cfg["focus_linkedin"] = True; config.save(cfg)
+        cfg["focus_linkedin"] = True
+        cfg["agencies"] = dict(cfg["agencies"], daily_cap=0)            # agencies tested in test_nov27_outbox
+        cfg["email"] = dict(cfg["email"], backend="file"); config.save(cfg)
         calls = []
         w = watch.Watcher(None, start_run=lambda trig, **k: calls.append((trig, k)) or 1)
         orig = runner.is_running; runner.is_running = lambda: False
         try:
             now = time.time() + 200
-            w.state["next_followups"] = 0                      # follow-ups are due, but focus mode leaves them alone
             w.tick(now)
-            self.assertEqual([(t, k["lanes"]) for t, k in calls], [("li_fast", ["easy_apply", "posts"])])
+            self.assertEqual([t for t, k in calls], ["li_fast"])
+            # 27 Nov: between LinkedIn cycles, replies + follow-ups run by themselves (every 2 h)
             w.tick(now + 300)
-            self.assertEqual(len(calls), 1)                    # not before 10 minutes
+            self.assertEqual([(t, k["lanes"]) for t, k in calls][-1], ("auto", ["followups"]))
+            w.tick(now + 400)
+            self.assertEqual(len(calls), 2)                    # LinkedIn not before 10 minutes, follow-ups not again
             w.tick(now + 601)
-            self.assertEqual(len(calls), 2)
+            self.assertEqual(calls[-1][0], "li_fast")
         finally:
             runner.is_running = orig
 

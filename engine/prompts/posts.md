@@ -2,16 +2,19 @@
 
 Goal: find LinkedIn **posts** hiring for ANY Salesforce role he can do, **remote only** (US, worldwide or India remote/WFH), qualify each one, and send the application by email. If the post shows an email, use it (free, best). If it does not, open the **poster's LinkedIn profile and read their email with SalesQL** (same panel as the JobRight lane).
 
-**Cap: 5 search pages** (the five URLs below), ~45 page loads total. Apply to EVERY qualifying post — the user wants every Salesforce hiring post covered. **SalesQL cap: 15 profile reveals per run** (credits); after that, no-email posts are skipped as `"no email in post"`.
+**Cap: 6 search pages** (the six URLs below), ~50 page loads total. Apply to EVERY qualifying post — the user wants every Salesforce hiring post covered. **SalesQL cap: 15 profile reveals per run** (credits); after that, no-email posts are skipped as `"no email in post"`.
+
+**Outside India first (Akshay, 27 Nov).** Remote work for clients in the US, UK, Europe, Australia, UAE etc. pays several times more than India, and that is what Job Hunter is for. The first three searches look only for those; give their posts your full effort before the India searches. A post from a US/UK/EU client or agency that is remote and does not say "US citizens / green card / W2 only / must live in X" qualifies even if it does not mention India: apply and say in the email that he works remotely from India on US/UK hours and can contract through his own company (C2C / B2B). Skip only when the post clearly requires local residence, a work permit he lacks, or onsite/hybrid.
 
 ## Steps
 1. Chrome setup per the common rules (`tabs_context_mcp`, then `tabs_create_mcp`; use only your tabId).
 2. For each search URL in order (Posts, past 24h, latest first; the searches are broad on purpose — skip a post as `"onsite/hybrid"` unless it says remote / WFH / work from home):
-   1. `https://www.linkedin.com/search/results/content/?keywords=%22salesforce%20developer%22%20hiring%20(remote%20OR%20wfh)&datePosted=%22past-24h%22&sortBy=%22date_posted%22`
-   2. `https://www.linkedin.com/search/results/content/?keywords=salesforce%20(%22lead%20developer%22%20OR%20%22senior%20developer%22%20OR%20engineer%20OR%20apex%20OR%20lwc)%20hiring%20(remote%20OR%20wfh)&datePosted=%22past-24h%22&sortBy=%22date_posted%22`
-   3. `https://www.linkedin.com/search/results/content/?keywords=salesforce%20(omnistudio%20OR%20cpq%20OR%20%22experience%20cloud%22%20OR%20%22data%20cloud%22%20OR%20agentforce)%20hiring%20(remote%20OR%20wfh)&datePosted=%22past-24h%22&sortBy=%22date_posted%22`
-   4. `https://www.linkedin.com/search/results/content/?keywords=%22salesforce%22%20hiring%20(%22share%20your%20resume%22%20OR%20%22send%20your%20cv%22%20OR%20%22email%22)&datePosted=%22past-24h%22&sortBy=%22date_posted%22`
-   5. `https://www.linkedin.com/search/results/content/?keywords=salesforce%20hiring%20(%22work%20from%20home%22%20OR%20%22pan%20india%22%20OR%20%22remote%20india%22)&datePosted=%22past-24h%22&sortBy=%22date_posted%22` (India remote roles: Indian companies replied most so far)
+   1. `https://www.linkedin.com/search/results/content/?keywords=salesforce%20(developer%20OR%20engineer%20OR%20consultant)%20hiring%20remote%20(USA%20OR%20%22United%20States%22%20OR%20%22US%20time%22%20OR%20EST%20OR%20PST%20OR%20CST%20OR%20C2C)&datePosted=%22past-24h%22&sortBy=%22date_posted%22` (US clients and US staffing agencies)
+   2. `https://www.linkedin.com/search/results/content/?keywords=salesforce%20(contract%20OR%20contractor%20OR%20freelance%20OR%20B2B%20OR%20%22outside%20IR35%22)%20remote%20(UK%20OR%20Europe%20OR%20EMEA%20OR%20Germany%20OR%20Netherlands%20OR%20Australia%20OR%20Canada%20OR%20UAE%20OR%20Dubai)&datePosted=%22past-24h%22&sortBy=%22date_posted%22` (UK / Europe / Australia / Middle East contracts)
+   3. `https://www.linkedin.com/search/results/content/?keywords=salesforce%20hiring%20remote%20(worldwide%20OR%20anywhere%20OR%20%22work%20from%20anywhere%22%20OR%20offshore%20OR%20global%20OR%20APAC%20OR%20LATAM)&datePosted=%22past-24h%22&sortBy=%22date_posted%22` (open to any country)
+   4. `https://www.linkedin.com/search/results/content/?keywords=%22salesforce%20developer%22%20hiring%20(remote%20OR%20wfh)&datePosted=%22past-24h%22&sortBy=%22date_posted%22`
+   5. `https://www.linkedin.com/search/results/content/?keywords=salesforce%20(omnistudio%20OR%20cpq%20OR%20%22experience%20cloud%22%20OR%20%22data%20cloud%22%20OR%20agentforce%20OR%20%22health%20cloud%22%20OR%20%22field%20service%22)%20hiring%20(remote%20OR%20wfh)&datePosted=%22past-24h%22&sortBy=%22date_posted%22`
+   6. `https://www.linkedin.com/search/results/content/?keywords=%22salesforce%22%20hiring%20(%22share%20your%20resume%22%20OR%20%22send%20your%20cv%22%20OR%20%22email%22%20OR%20%22remote%20india%22%20OR%20%22pan%20india%22)&datePosted=%22past-24h%22&sortBy=%22date_posted%22` (resume-by-email posts, India remote too)
 
    `log_step` → `navigate` → run this with `javascript_tool` (it waits, scrolls to load more posts, clicks every "…more", and lists emails — tested on his Chrome):
 ```js

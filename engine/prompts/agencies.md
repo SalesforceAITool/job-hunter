@@ -25,6 +25,7 @@ Use the cold-email structure from the common rules, adapted for an agency (120�
 - **3 "• " lines** with real facts: Agentforce in production (Nissan, ASDA) · Salesforce CPQ + SAP integration (Amkor) · 7+ years, ~20 projects, 11 certifications (Platform Developer II, Data Cloud, AI Specialist) — pick the 3 that fit their focus (CPQ desk → CPQ first).
 - **Logistics line:** "India-based, full US hours, C2C through my company Trysyntx IT Solution Pvt. Ltd. (USD invoices), around USD 30/hour and flexible, available within 15 days."
   For an agency in **India** (region India: Indian consultancies that staff foreign client projects): "Based in India, remote, happy to work US/UK hours for your client projects, on contract through my company Trysyntx IT Solution Pvt. Ltd. or as you prefer, available within 15 days." No USD rate for India agencies.
+- **Team line (Akshay, 27 Nov: "if I get 10 jobs I can distribute the work to my staff"):** one short sentence that, beyond himself, he can staff more Salesforce developers from his own team for larger or parallel reqs (Apex/LWC/Flow/CPQ). Never invent team size, names or client logos.
 - **CTA:** "If you have Salesforce reqs open with US clients, I'd be glad to jump on a quick call — or simply keep my resume on file."
 - **Close:** "Either way, thanks for reading — resume attached." Then the standard signature.
 - **Subject:** e.g. `Salesforce developer for your US clients — C2C, available now` or `Agentforce + CPQ contractor for your Salesforce reqs`.

@@ -36,7 +36,10 @@ SEED_BOARDS = [("greenhouse", "neuraflash"), ("greenhouse", "litmos"), ("greenho
                # answers 404/410 three times is marked dead automatically)
                ("greenhouse", "spauldingridge"), ("greenhouse", "penrodsoftware"), ("greenhouse", "conga"),
                ("lever", "smart-working-solutions"), ("lever", "brillio-2"),
-               ("workable", "two95-international-inc-3"), ("workable", "devsinc-17")]
+               ("workable", "two95-international-inc-3"), ("workable", "devsinc-17"),
+               # 27 Nov (market research): foreign companies with "Salesforce Developer - India (remote)" roles
+               ("lever", "thinkahead"), ("lever", "jumpcloud"), ("greenhouse", "chainguard"), ("lever", "3pillarglobal"),
+               ("workable", "alongside-team")]
 
 _REMOTE = re.compile(r"\bremote\b|work from home|\bwfh\b|anywhere|distributed|home[- ]based|virtual", re.I)
 _OPEN = re.compile(r"\bindia\b|anywhere|worldwide|world-wide|global|\bapac\b|asia|international|any location|"
