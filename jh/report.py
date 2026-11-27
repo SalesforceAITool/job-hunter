@@ -300,9 +300,11 @@ def send(conn, cfg, start, end, title_day=None) -> dict:
     try:                         # 27 Nov: from a Gmail account that is not paused by Gmail's sending limit
         from . import sendguard
         if (cfg.get("email") or {}).get("backend", "smtp") == "smtp":
-            acct, _ = sendguard.pick(conn, cfg, ignore_gap=True)
+            acct, why = sendguard.pick(conn, cfg, ignore_gap=True)
             if acct:
                 send_cfg = sendguard.acct_cfg(cfg, acct)
+            elif sendguard.accounts(cfg):
+                return {"ok": False, "error": "no Gmail account can send right now (%s)" % why}
     except Exception as e:
         log.warning("report: account pick: %s", e)
     try:

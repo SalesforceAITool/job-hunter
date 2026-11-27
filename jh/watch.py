@@ -581,6 +581,15 @@ class Watcher:
                         % (errors[0], self.state["backoff"]), "warn")
         return new
 
+    def can_send(self, conn, cfg):
+        """Some Gmail account can send today (27 Nov: no AI money on pitches that would wait a day in the outbox)."""
+        from . import sendguard
+        try:
+            return sendguard.any_account_free(conn, cfg)
+        except Exception as e:
+            log.warning("send check: %s", e)
+            return True
+
     def auto_lanes_tick(self, conn, now, local_hour=None):
         """27 Nov: follow-ups (replies, bounces, nudges into the outbox - no AI) every autopilot.focus_followups_min,
         agency pitches (AI) every agencies.every_min inside agencies.start_hour..end_hour IST (UK/US working day)
@@ -608,7 +617,7 @@ class Watcher:
         if ag.get("auto", True) and cap > 0 and int(ag.get("start_hour", 13)) <= hour < int(ag.get("end_hour", 24)) \
                 and now >= self.state.get("next_agencies", 0) and now >= self.state.get("next_ai", 0):
             self.state["next_agencies"] = now + 60 * int(ag.get("every_min") or 120)
-            if agency_emails_today(conn) < cap and not over_budget(conn):
+            if agency_emails_today(conn) < cap and not over_budget(conn) and self.can_send(conn, cfg):
                 return self._start(conn, "agencies", lanes=["agencies"])
         return None
 
@@ -679,6 +688,10 @@ class Watcher:
         lanes = [x for x in ("easy_apply", "posts", "linkedin_jobs")
                  if x in [str(v) for v in (lf.get("lanes") if isinstance(lf.get("lanes"), list) else [])]] or ["easy_apply"]
         targets = []
+        if "posts" in lanes and not self.can_send(conn, config.load()):
+            lanes = [x for x in lanes if x != "posts"]          # posts only lead to emails: wait while Gmail is paused
+            if not lanes:
+                return None
         if "easy_apply" in lanes:
             targets, lanes = self.easy_apply_targets(conn, lf, regions, lanes, now)
             if not lanes:
