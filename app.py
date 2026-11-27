@@ -138,6 +138,8 @@ def main(argv=None):
     ap.add_argument("--port", type=int, default=None)
     ap.add_argument("--no-browser", action="store_true")
     ap.add_argument("--no-run", action="store_true", help="do not auto-start a run")
+    # 27 Nov (jh/selfupdate.py): started by the running app when a new build lands - wait until it has exited
+    ap.add_argument("--takeover", action="store_true", help=argparse.SUPPRESS)
     args = ap.parse_args(argv)
 
     setup_logging()
@@ -150,6 +152,12 @@ def main(argv=None):
         args.no_browser = True       # Akshay, 10 Nov: start quietly in the background when Windows starts
     log.info("starting Job Hunter (port %s, data %s)%s", port, config.data_dir(), " at Windows start" if booted else "")
 
+    if args.takeover:
+        for _ in range(120):                 # the old process exits right after starting us
+            if existing_server(base) is None:
+                break
+            time.sleep(1)
+        log.info("takeover: loading the new build")
     running = existing_server(base)
     if running is not None:
         log.info("server already running at %s - reusing it", base)
