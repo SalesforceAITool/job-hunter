@@ -428,7 +428,9 @@ def fix_limit_bounces(conn) -> int:
             conn.execute("UPDATE emails SET status='failed', error='Gmail sending limit (not delivered)' WHERE contact_id=?"
                          " AND status='bounced' AND kind<>'initial'", (cid,))
             conn.execute("UPDATE emails SET status='sent' WHERE contact_id=? AND status='bounced' AND kind='initial'", (cid,))
-            if not conn.execute("SELECT 1 FROM replies WHERE contact_id=? AND kind='bounce'", (cid,)).fetchone():
+            first = conn.execute("SELECT MIN(sent_at) FROM emails WHERE contact_id=? AND kind='initial'", (cid,)).fetchone()[0]
+            recent = bool(first and first >= SWITCH_TS)   # threads started before 10 Nov stay closed (6+ weeks old)
+            if recent and not conn.execute("SELECT 1 FROM replies WHERE contact_id=? AND kind='bounce'", (cid,)).fetchone():
                 conn.execute("UPDATE contacts SET stop_nudges=0 WHERE id=?", (cid,))
                 conn.execute("UPDATE jobs SET status='contacted' WHERE status='bounced' AND id=(SELECT job_id FROM contacts"
                              " WHERE id=?)", (cid,))

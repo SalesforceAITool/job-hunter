@@ -101,6 +101,7 @@ DEFAULTS = {
         "chrome_device_id": "",
         "chrome_profile_dir": "",   # Job Hunter Chrome profile folder (chrome://version "Profile Path", e.g. "Profile 2"): opened at boot
     },
+    "migrations": ["2026-11-27"],   # one-time config.json updates already applied (jh/config._migrate)
     "profile": {
         "name": "Akshay Kumar Verma",
         "email": "akshay.verma0031@gmail.com",
@@ -165,7 +166,35 @@ def load(path=None) -> dict:
             raw = json.loads(p.read_text(encoding="utf-8") or "{}")
         except (OSError, ValueError):
             raw = {}
+        if isinstance(raw, dict) and _migrate(raw):
+            try:
+                _write(p, raw)
+            except OSError:
+                pass
     return _deep_merge(DEFAULTS, raw if isinstance(raw, dict) else {})
+
+
+MIGRATIONS = ["2026-11-27"]
+
+
+def _migrate(raw: dict) -> bool:
+    """One-time changes to a saved config.json (True = changed, written back once).
+    2026-11-27 (Akshay: "focus first on outside India"): regions us > world > india, agencies for clients outside
+    India, pitched and followed up by themselves."""
+    done = raw.get("migrations") if isinstance(raw.get("migrations"), list) else []
+    if "2026-11-27" in done:
+        return False
+    ap = raw.get("autopilot") if isinstance(raw.get("autopilot"), dict) else {}
+    regs = [r for r in (ap.get("regions") or []) if r in ("us", "world", "india")]
+    ap["regions"] = ["us"] + [r for r in ("world", "india") if r in regs or not regs]
+    raw["autopilot"] = ap
+    dr = [r for r in (raw.get("default_regions") or []) if r in ("us", "world", "india")]
+    raw["default_regions"] = ["us"] + [r for r in ("world", "india") if r in dr or not dr]
+    ag = raw.get("agencies") if isinstance(raw.get("agencies"), dict) else {}
+    ag["focus"] = "outside"
+    raw["agencies"] = ag
+    raw["migrations"] = done + ["2026-11-27"]
+    return True
 
 
 def _write(p: Path, cfg: dict):
