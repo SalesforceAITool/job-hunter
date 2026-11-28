@@ -62,6 +62,27 @@ class SendGuardTests(TempData, unittest.TestCase):
         self.assertIsNone(a)
         self.assertIn("daily cap", why)
 
+    def test_daily_cap_is_a_rolling_24h_window(self):
+        # 28 Nov: 12 sends in the evening, then midnight reset the count and 11 more went out -> Gmail 5.4.5
+        from datetime import timedelta
+        cfg = smtp_cfg(self.cfg, warmup_daily=3, per_account_hourly=50, accounts=[])
+        for h in (5, 4, 3):     # yesterday evening (hours ago), possibly another calendar date
+            self.conn.execute("INSERT INTO emails (kind, status, sent_at, sender) VALUES ('initial','sent',?,?)",
+                              ((db.now() - timedelta(hours=h)).replace(microsecond=0).isoformat(), A1))
+        self.conn.execute("INSERT INTO emails (kind, status, sent_at, sender) VALUES ('initial','sent',?,?)",
+                          ((db.now() - timedelta(hours=30)).replace(microsecond=0).isoformat(), A1))
+        self.assertEqual(sendguard.sent_today(self.conn, A1), 3)      # 30 h ago does not count
+        a, why = sendguard.pick(self.conn, cfg, ignore_gap=True)
+        self.assertIsNone(a)
+        self.assertIn("daily cap", why)
+
+    def test_hourly_cap_spans_midnight(self):
+        from datetime import timedelta
+        for m in (50, 40, 30):
+            self.conn.execute("INSERT INTO emails (kind, status, sent_at, sender) VALUES ('initial','sent',?,?)",
+                              ((db.now() - timedelta(minutes=m)).replace(microsecond=0).isoformat(), A1))
+        self.assertEqual(sendguard.sent_last_hour(self.conn, A1), 3)
+
     def test_recipient_checks(self):
         cfg = smtp_cfg(self.cfg, verify_recipients=True)
         ok, why = sendguard.check_recipient(self.conn, cfg, A2, "post")

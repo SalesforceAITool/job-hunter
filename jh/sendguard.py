@@ -24,6 +24,7 @@ import re
 import time
 import urllib.parse
 import urllib.request
+from datetime import timedelta
 
 from . import db, dedupe
 
@@ -191,19 +192,24 @@ def _first_use(conn, addr, now_iso):
     return v
 
 
+def _sent_since(conn, addr, hours) -> int:
+    """Messages this account handed to Gmail in the last `hours` (rolling window, as Gmail counts them)."""
+    since = (db.now() - timedelta(hours=hours)).replace(microsecond=0).isoformat()
+    rows = conn.execute("SELECT sent_at FROM emails WHERE lower(COALESCE(sender,''))=? AND COALESCE(queued,0)=0 AND"
+                        " status IN ('sent','bounced','sending') AND sent_at>=?",
+                        (_norm(addr), since[:10])).fetchall()
+    cut = db.parse_ts(since).timestamp()
+    return sum(1 for r in rows if db.parse_ts(r[0]) and db.parse_ts(r[0]).timestamp() >= cut)
+
+
 def sent_today(conn, addr) -> int:
-    today = db.today_ist().isoformat()
-    return conn.execute("SELECT COUNT(*) FROM emails WHERE lower(COALESCE(sender,''))=? AND COALESCE(queued,0)=0 AND"
-                        " status IN ('sent','bounced','sending') AND substr(sent_at,1,10)=?",
-                        (_norm(addr), today)).fetchone()[0]
+    """Sends in the last 24 h. 28 Nov: counting by IST calendar date let a young account send 12 at 19:00-20:30 and
+    11 more right after midnight - 23 in 6 h, and Gmail (a rolling 24 h window) refused at 01:12."""
+    return _sent_since(conn, addr, 24)
 
 
 def sent_last_hour(conn, addr) -> int:
-    since = db.now().timestamp() - 3600
-    rows = conn.execute("SELECT sent_at FROM emails WHERE lower(COALESCE(sender,''))=? AND COALESCE(queued,0)=0 AND"
-                        " status IN ('sent','bounced','sending') AND sent_at>=?",
-                        (_norm(addr), db.now_iso()[:10])).fetchall()
-    return sum(1 for r in rows if (db.parse_ts(r[0]) and db.parse_ts(r[0]).timestamp() >= since))
+    return _sent_since(conn, addr, 1)
 
 
 def last_send(conn, addr=None) -> float:
