@@ -185,9 +185,12 @@ def reply_subject(subject: str) -> str:
 # ------------------------------------------------------------------ the lane
 
 def _mark_bounce(conn, b, emit, counts):
+    from . import sendguard
     addr = (b.get("failed_addr") or "").lower()
     if not addr:
         return
+    if sendguard._get(conn, "limitdsn:%s:%s" % (addr, (b.get("date") or "")[:16])):
+        return      # this notice was already recognised as a Gmail limit / account failure
     rows = conn.execute("SELECT id, job_id FROM contacts WHERE lower(trim(email))=?", (addr,)).fetchall()
     for c in rows:
         if conn.execute("SELECT 1 FROM replies WHERE contact_id=? AND kind='bounce'", (c["id"],)).fetchone():
@@ -388,11 +391,12 @@ def run_followups(conn, run_id, cfg, emit_fn=None, stop_event=None, today=None) 
                 try:
                     bounces = mb.find_bounces(14)   # 27 Nov: 7 days missed bounces between runs
                     burst = _limit_bursts(bounces)
-                    for i, b in enumerate(bounces):
+                    streak = _account_streak(conn, acct["address"], bounces)
+                    for j, b in enumerate(bounces):
                         # Gmail's limit notices come as a burst of "failures" within a minute or two (26 Nov: 9 at
                         # 14:39-14:40 for valid addresses); the outbox spaces sends out, so real bounces never do
-                        if b.get("limit") or i in burst:
-                            _mark_limit(conn, cfg, acct, b, emit, counts)
+                        if b.get("limit") or j in burst or j in streak:
+                            _mark_limit(conn, cfg, acct, b, emit, counts, streak=j in streak)
                         else:
                             _mark_bounce(conn, b, emit, counts)
                 except Exception as e:  # bounce check failure shouldn't block replies/nudges
@@ -515,9 +519,10 @@ def _nudge(conn, run_id, cfg, acfg, acct, mb, t, emit, counts, dry, queue) -> bo
     return True
 
 
-def _mark_limit(conn, cfg, acct, b, emit, counts):
+def _mark_limit(conn, cfg, acct, b, emit, counts, streak=False):
     """Gmail's "you have reached a limit for sending mail" notice: not a dead address. Pause the account and put the
-    message that triggered it back in the outbox (it was never delivered)."""
+    message that triggered it back in the outbox (it was never delivered). streak=True: one of a row of instant
+    failures for every message the account sent (28 Nov) - it may already be stored as a bounce: undo that."""
     from . import sendguard
     addr = (b.get("failed_addr") or "").lower()
     key = "limitdsn:%s:%s" % (addr, (b.get("date") or "")[:16])
@@ -526,8 +531,13 @@ def _mark_limit(conn, cfg, acct, b, emit, counts):
     sendguard._set(conn, key, db.now_iso())
     hours = sendguard.opts(cfg)["limit_pause_h"]
     when = db.parse_ts(b.get("date")) or db.now()
+    if streak and addr:
+        _undo_bounce(conn, addr, b)
     # the pause counts from the notice, not from when Job Hunter read it (an old notice pauses nothing now)
     until_s = when.timestamp() + 3600 * float(hours)
+    # a streak message goes out again only after Gmail's rolling day has passed (the account itself is held by the
+    # normal pause and the rolling 24 h cap)
+    retry_s = max(until_s, when.timestamp() + 24 * 3600) if streak else until_s
     if until_s > db.now().timestamp():
         sendguard.pause(conn, acct["address"], (until_s - db.now().timestamp()) / 3600.0,
                         "Gmail limit notice: " + (b.get("subject") or ""))
@@ -542,11 +552,70 @@ def _mark_limit(conn, cfg, acct, b, emit, counts):
                        " LIMIT 1", (addr, lo, hi)).fetchone()
     if row and until_s > db.now().timestamp() - 3 * 86400:
         conn.execute("UPDATE emails SET status='sending', queued=1, sender=?, next_try=?, error=? WHERE id=?",
-                     (acct["address"], datetime.fromtimestamp(until_s, db.IST).replace(microsecond=0).isoformat(),
+                     (acct["address"], datetime.fromtimestamp(retry_s, db.IST).replace(microsecond=0).isoformat(),
                       "Gmail limit notice: sent again later", row["id"]))
     emit(LANE, "warning", "Gmail limit notice for %s (sent from %s): not a dead address%s"
          % (addr or "?", acct["address"], "; the message goes out again later" if row else ""), "warn",
          {"email": addr, "account": acct["address"]})
+
+
+def _undo_bounce(conn, addr, b):
+    """A notice first stored as a dead-address bounce turns out to be an account-level failure: the contact is
+    reachable again (unless another, real bounce exists) and the job goes back to 'contacted'."""
+    for c in conn.execute("SELECT id, job_id FROM contacts WHERE lower(trim(email))=?", (addr,)).fetchall():
+        hit = conn.execute("UPDATE replies SET kind='limit' WHERE contact_id=? AND kind='bounce' AND received_at=?",
+                           (c["id"], b.get("date") or "")).rowcount
+        if not hit:
+            continue
+        # _mark_bounce marked every sent message of the contact; the ones before this notice were delivered
+        before = ((db.parse_ts(b.get("date")) or db.now()) - timedelta(minutes=15)).replace(microsecond=0).isoformat()
+        conn.execute("UPDATE emails SET status='sent' WHERE contact_id=? AND status='bounced' AND sent_at<?",
+                     (c["id"], before))
+        if not conn.execute("SELECT 1 FROM replies WHERE contact_id=? AND kind='bounce'", (c["id"],)).fetchone():
+            conn.execute("UPDATE contacts SET stop_nudges=0 WHERE id=?", (c["id"],))
+            conn.execute("UPDATE jobs SET status='contacted', updated_at=? WHERE id=? AND status='bounced'",
+                         (db.now_iso(), c["job_id"]))
+
+
+def _account_streak(conn, account, bounces, quick_s=120, min_run=3) -> set:
+    """Indexes of failure notices that are really the account being blocked, not dead addresses (28 Nov: 9 notices,
+    each 0-1 s after its send, for 9 consecutive sends 4 minutes apart to 8 domains incl. gmail.com; Gmail refused
+    with 5.4.5 right after). Rule: >= min_run consecutive sends from this account all failed within quick_s seconds,
+    to >= 2 domains, and none of the notices says the mailbox does not exist."""
+    quick = {}   # email id -> bounce index
+    for j, b in enumerate(bounces):
+        addr = (b.get("failed_addr") or "").lower()
+        t = db.parse_ts(b.get("date"))
+        if not addr or not t or b.get("dead"):
+            continue
+        lo = (t - timedelta(seconds=quick_s)).replace(microsecond=0).isoformat()
+        hi = (t + timedelta(seconds=5)).replace(microsecond=0).isoformat()
+        row = conn.execute("SELECT e.id FROM emails e JOIN contacts c ON c.id=e.contact_id WHERE lower(trim(c.email))=?"
+                           " AND lower(COALESCE(e.sender,''))=? AND e.sent_at>=? AND e.sent_at<=?"
+                           " ORDER BY e.sent_at DESC LIMIT 1", (addr, (account or "").lower(), lo, hi)).fetchone()
+        if row:
+            quick[row[0]] = j
+    if len(quick) < min_run:
+        return set()
+    sends = conn.execute("SELECT e.id, lower(trim(c.email)) FROM emails e LEFT JOIN contacts c ON c.id=e.contact_id"
+                         " WHERE lower(COALESCE(e.sender,''))=? AND e.sent_at IS NOT NULL AND COALESCE(e.queued,0)=0"
+                         " AND e.status IN ('sent','bounced') ORDER BY e.sent_at, e.id",
+                         ((account or "").lower(),)).fetchall()
+    out, run = set(), []
+
+    def close(run):
+        doms = {(r[1] or "").split("@")[-1] for r in run}
+        if len(run) >= min_run and len(doms) >= 2:
+            out.update(quick[r[0]] for r in run)
+
+    for r in sends:
+        if r[0] in quick:
+            run.append(r)
+        else:
+            close(run)
+            run = []
+    close(run)
+    return out
 
 
 def _limit_bursts(bounces) -> set:

@@ -224,13 +224,19 @@ LIMIT_NOTICE = re.compile(r"reached a limit for sending|sending limit|5\.4\.5|li
                           r"daily user sending limit|rate limit", re.I)
 
 
+# the recipient's server said the mailbox does not exist (same idea as sendguard.DEAD_RX)
+_DEAD_NOTICE = re.compile(r"5\.1\.1|5\.1\.0|user unknown|no such user|does not exist|address not found|"
+                          r"recipient (address )?rejected|unknown recipient|invalid recipient|no mailbox|"
+                          r"address couldn't be found", re.I)
+
+
 def _bounce_info(m, own) -> dict:
     """A bounce notice -> {failed_addr, subject, date, limit}. limit=True: Gmail's own "you have reached a limit for
     sending mail" notice (27 Nov: 18 of these were stored as dead addresses) - the address is fine, the account was
     throttled."""
     text = "%s\n%s" % (m.get("subject") or "", m.get("text") or "")
     return {"failed_addr": failed_address(m, own), "subject": m["subject"], "date": m["date"],
-            "limit": bool(LIMIT_NOTICE.search(text))}
+            "limit": bool(LIMIT_NOTICE.search(text)), "dead": bool(_DEAD_NOTICE.search(text))}
 
 
 # ------------------------------------------------------------------ mailbox sessions
