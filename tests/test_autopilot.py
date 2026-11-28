@@ -44,6 +44,30 @@ class AutopilotTests(TempData, unittest.TestCase):
         self.assertEqual([c[1] for c in calls], [("followups",)])     # no LinkedIn Jobs run after the budget
         self.assertTrue(w.status()["over_budget"])
 
+    def test_posts_capped_at_its_share_of_the_same_budget(self):
+        # 28 Nov: posts spent $32 of $40 and Easy Apply was blocked from 13:15 IST
+        from jh import runner
+        self.cfg["budget"] = {"daily_usd": 40, "posts_share": 0.5}
+        config.save(self.cfg)
+        cfg = config.load()
+        self.assertEqual(cfg["budget"], {"daily_usd": 40.0, "posts_share": 0.5})
+        events.emit(self.conn, None, "posts", "lane_finished", "x", "info", {"cost_usd": 20})
+        self.assertTrue(runner.over_budget(self.conn, cfg, "posts"))
+        self.assertFalse(runner.over_budget(self.conn, cfg, "easy_apply"))
+        self.assertFalse(runner.over_budget(self.conn, cfg))
+        self.assertEqual(runner.spent_today(self.conn, "posts"), 20.0)
+        self.assertEqual(runner.spent_today(self.conn, "easy_apply"), 0.0)
+
+    def test_posts_share_normalised(self):
+        out = config.apply_update(config.load(), {"budget": {"daily_usd": 40, "posts_share": 7}})
+        self.assertEqual(out["budget"]["posts_share"], 1.0)
+        out = config.apply_update(config.load(), {"budget": {"daily_usd": 30}})
+        self.assertEqual(out["budget"], {"daily_usd": 30.0, "posts_share": 0.5})
+        from jh import runner                       # a hand-edited bad value is clamped at use
+        cfg = {"budget": {"daily_usd": 10, "posts_share": "x"}}
+        events.emit(self.conn, None, "posts", "lane_finished", "x", "info", {"cost_usd": 5})
+        self.assertTrue(runner.over_budget(self.conn, cfg, "posts"))
+
     def test_real_app_watcher_has_autopilot_and_job_board(self):
         """Regression: the default fetcher was filled in before the "was a fetcher injected?" check, so the real app's
         watcher thought it was a test and never ran the Job board or Autopilot."""

@@ -54,7 +54,9 @@ DEFAULTS = {
     # 27 Nov: focus_followups_min = replies/follow-ups by themselves in LinkedIn focus mode; outside India first
     "autopilot": {"on": True, "followups_min": 15, "linkedin_jobs_min": 60, "regions": ["us", "world", "india"],
                   "focus_followups_min": 120},
-    "budget": {"daily_usd": 40},
+    # 28 Nov: posts used $32-36 of the $40 a day and blocked Easy Apply from 13:15 IST (all of US daytime):
+    # posts_share = the part of the SAME daily budget the posts lane may use (the rest stays for applying)
+    "budget": {"daily_usd": 40, "posts_share": 0.5},
     # Akshay, 11 Nov: one email a day with what Job Hunter did (Easy Apply / portal applications submitted, recruiter
     # emails sent, follow-ups, replies, forms waiting) at `hour` IST, to `to` (empty = the application Gmail)
     "daily_report": {"on": True, "hour": 23, "to": ""},
@@ -374,7 +376,11 @@ def apply_update(cfg: dict, incoming: dict, from_api: bool = False) -> dict:
         bd["daily_usd"] = min(500.0, max(0.0, float(bd.get("daily_usd"))))
     except (TypeError, ValueError, OverflowError):
         bd["daily_usd"] = DEFAULTS["budget"]["daily_usd"]
-    out["budget"] = {"daily_usd": bd["daily_usd"]}
+    try:
+        bd["posts_share"] = min(1.0, max(0.0, float(bd.get("posts_share"))))
+    except (TypeError, ValueError, OverflowError):
+        bd["posts_share"] = DEFAULTS["budget"]["posts_share"]
+    out["budget"] = {"daily_usd": bd["daily_usd"], "posts_share": bd["posts_share"]}
     dr = _deep_merge(DEFAULTS["daily_report"], out.get("daily_report") if isinstance(out.get("daily_report"), dict) else {})
     dr["on"] = _as_bool(dr.get("on", True))
     try:

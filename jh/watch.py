@@ -242,9 +242,9 @@ def agency_emails_today(conn) -> int:
                         (day,)).fetchone()[0]
 
 
-def over_budget(conn) -> bool:
+def over_budget(conn, lane=None) -> bool:
     from . import runner as _r
-    return _r.over_budget(conn)
+    return _r.over_budget(conn, None, lane)
 
 
 class Watcher:
@@ -520,7 +520,7 @@ class Watcher:
                 posts_due = w.get("posts") and now >= self.state["next_posts"]
                 if posts_due:
                     self.state["next_posts"] = now + 60 * int(w.get("posts_interval_min") or 30)
-            if posts_due:
+            if posts_due and not over_budget(conn, "posts"):
                 return self._start(conn, "posts", lanes=["posts"], quick=True)
             if ap.get("on") and now >= self.state["next_li"]:
                 self.state["next_li"] = now + 60 * int(ap.get("linkedin_jobs_min") or 60)
@@ -688,6 +688,10 @@ class Watcher:
         lanes = [x for x in ("easy_apply", "posts", "linkedin_jobs")
                  if x in [str(v) for v in (lf.get("lanes") if isinstance(lf.get("lanes"), list) else [])]] or ["easy_apply"]
         targets = []
+        if "posts" in lanes and over_budget(conn, "posts"):
+            lanes = [x for x in lanes if x != "posts"]          # 28 Nov: posts used its share of today's AI budget
+            if not lanes:
+                return None
         if "posts" in lanes and not self.can_send(conn, config.load()):
             lanes = [x for x in lanes if x != "posts"]          # posts only lead to emails: wait while Gmail is paused
             if not lanes:

@@ -161,11 +161,15 @@ def _lane_counts(conn, run_id, lane) -> dict:
     return c
 
 
-def spent_today(conn) -> float:
-    """AI dollars every lane used today (IST), from the lane_finished events."""
+def spent_today(conn, lane=None) -> float:
+    """AI dollars every lane (or one lane) used today (IST), from the lane_finished events."""
     usd = 0.0
-    for (d,) in conn.execute("SELECT data_json FROM events WHERE type='lane_finished' AND substr(ts,1,10)=?",
-                             (db.now_iso()[:10],)):
+    q = "SELECT data_json FROM events WHERE type='lane_finished' AND substr(ts,1,10)=?"
+    args = [db.now_iso()[:10]]
+    if lane:
+        q += " AND lane=?"
+        args.append(lane)
+    for (d,) in conn.execute(q, args):
         try:
             usd += float(json.loads(d or "{}").get("cost_usd") or 0)
         except (TypeError, ValueError):
@@ -173,21 +177,36 @@ def spent_today(conn) -> float:
     return round(usd, 2)
 
 
-def over_budget(conn, cfg=None) -> bool:
-    cap = float(((cfg or config.load()).get("budget") or {}).get("daily_usd") or 0)
-    return bool(cap) and spent_today(conn) >= cap
+def over_budget(conn, cfg=None, lane=None) -> bool:
+    """Today's AI budget used up - or, for lane='posts', the posts share of it (the rest is kept for applying)."""
+    bd = (cfg or config.load()).get("budget") or {}
+    cap = float(bd.get("daily_usd") or 0)
+    if not cap:
+        return False
+    if spent_today(conn) >= cap:
+        return True
+    if lane == "posts":
+        share = bd.get("posts_share", 0.5)
+        share = 0.5 if not isinstance(share, (int, float)) or isinstance(share, bool) else share
+        return spent_today(conn, "posts") >= cap * min(1.0, max(0.0, float(share)))
+    return False
 
 
 def _run_ai_lane(engine, lane, run_id, cfg, emit, stop, db_path, results, started=False, t0=None):
     if not started:
         emit(lane, "lane_started", "Starting %s" % lane)
     t0 = t0 or time.time()
-    if lane != "submit" and over_budget(emit.conn(), cfg):
+    if lane != "submit" and over_budget(emit.conn(), cfg, lane):
         # never blocks the submit lane: that is Akshay's own click on forms already paid for
         data = {"status": "skipped", "counts": _lane_counts(emit.conn(), run_id, lane), "elapsed_s": 0,
                 "reason": "daily AI budget reached"}
-        emit(lane, "warning", "%s skipped: today's AI budget ($%s, Settings) is used up — free checks continue,"
-             " AI lanes resume tomorrow" % (lane, (cfg.get("budget") or {}).get("daily_usd")), "warn")
+        if lane == "posts" and not over_budget(emit.conn(), cfg):
+            data["reason"] = "posts share of today's AI budget reached"
+            emit(lane, "warning", "posts skipped: the posts share of today's AI budget is used; the rest is kept for"
+                 " Easy Apply and the other lanes", "warn")
+        else:
+            emit(lane, "warning", "%s skipped: today's AI budget ($%s, Settings) is used up — free checks continue,"
+                 " AI lanes resume tomorrow" % (lane, (cfg.get("budget") or {}).get("daily_usd")), "warn")
         emit(lane, "lane_finished", "%s skipped" % lane, "warn", data)
         results[lane] = data
         return
